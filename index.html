@@ -332,22 +332,18 @@
     }
 
     #relationship-form-container #relationship-preview-container {
-        border: 1px solid var(--border-color);
-        border-radius: 6px;
-        padding: 10px;
-        min-height: 120px; /* Adjusted height for preview */
-        max-height: 120px; /* Adjusted height for preview */
+        /* Removed border and background */
+        /* Removed min-height and max-height */
+        padding: 0; /* No padding inside preview container */
         display: flex;
         align-items: center;
         justify-content: center;
-        background-color: var(--bg-color);
         margin-bottom: 15px; /* Space between preview and select */
         overflow: hidden; /* Hide overflow from SVG */
     }
     #relationship-form-container #relationship-preview-container svg {
         max-width: 100%;
-        max-height: 100%; /* Constrain SVG height to 100% of container */
-        height: auto;
+        height: auto; /* Allow SVG height to determine container height */
         display: block;
     }
 
@@ -1187,7 +1183,7 @@ R .. J : "asdf"
                   const errorMatch = errorResponseText.match(/<text.*?fill="#FF0000".*?>(.*?)<\/text>/);
                   let errorMessage = `HTTP error! Status: ${res.status} (${res.statusText || 'Unknown'})`;
                   if (errorMatch && errorMatch[1]) {
-                      errorMessage += ` - PlantUML Syntax Error: ${errorMatch[1].replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec))}`;
+                      errorMessage += ` - PlantUML Syntax: ${errorMatch[1].replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec))}`;
                   } else {
                       errorMessage += ` - Server response: ${errorResponseText.substring(0, 200)}...`;
                   }
@@ -1202,8 +1198,7 @@ R .. J : "asdf"
               const svg = previewContainer.querySelector('svg');
               if (svg) {
                   svg.style.maxWidth = '100%';
-                  svg.style.maxHeight = '100%'; // Ensure it fits vertically too (up to container max-height)
-                  svg.style.height = 'auto';
+                  svg.style.height = 'auto'; // Ensure it fits vertically too (up to container max-height)
               }
           } catch (error) {
               previewContainer.innerHTML = `<p style='color:red; font-size: var(--font-size-small);'>Preview Error: ${error.message}</p><p style='font-size: var(--font-size-small); color: #7f8c8d;'>Generated PlantUML for preview (check console): <pre>${tempPlantUml.split('\n').map(line => line.trim()).filter(Boolean).join('\n')}</pre></p>`;
