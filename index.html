@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>AI Slop at its Finest</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <title>PlantUML Editor</title> <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <style>
     :root {
@@ -21,7 +20,9 @@
       --highlight-stroke-entity: #2ecc71; /* Pleasant green for selected entities */
       --highlight-stroke-relation: #e74c3c; /* Soft red for hovered relations */
       --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06); /* Softer, wider shadow */
-      --border-radius: 8px; /* Slightly more rounded corners */
+      --border-radius: 88px; /* Slightly more rounded corners, used for header */
+      --panel-border-radius: 8px; /* Standard rounded corners for panels */
+
 
       /* Custom colors for relationship buttons */
       --add-rel-bg: #e6ffe6; /* Light green */
@@ -64,22 +65,26 @@
       border-bottom: 1px solid var(--border-color);
       font-size: var(--font-size-main-heading); /* Smaller main heading */
       font-weight: 600;
-      border-top-left-radius: var(--border-radius);
-      border-top-right-radius: var(--border-radius);
+      border-top-left-radius: var(--border-radius); /* Keep large radius for header */
+      border-top-right-radius: var(--border-radius); /* Keep large radius for header */
       box-shadow: var(--box-shadow); /* Add shadow to banner */
       z-index: 10; /* Ensure it's above other content for visual separation */
       position: sticky; /* Make it sticky if needed */
       top: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
-    h2 i {
-        margin-right: 10px;
-        color: var(--primary-color);
+    h2 .logo { /* Styling for the new SVG logo */
+        width: 30px; /* Adjust size as needed */
+        height: 30px;
+        vertical-align: middle;
     }
 
     #sidebar, .editor-panel, #properties-pane, #relationship-form-container {
       background-color: var(--panel-bg);
       border: 1px solid var(--border-color);
-      border-radius: var(--border-radius);
+      border-radius: var(--panel-border-radius); /* Use new variable for panel radius */
       box-shadow: var(--box-shadow);
       padding: 18px; /* Consistent padding for panels */
       display: flex;
@@ -116,7 +121,7 @@
     button {
       padding: 8px 12px; /* Increased padding */
       border: 1px solid var(--border-color);
-      border-radius: var(--border-radius); /* Consistent border-radius */
+      border-radius: var(--panel-border-radius); /* Consistent border-radius for buttons */
       background-color: var(--button-bg);
       color: var(--text-color);
       cursor: pointer;
@@ -207,8 +212,8 @@
         color: var(--heading-color);
         font-size: var(--font-size-heading-section); /* Smaller editor panel headings */
         font-weight: 500;
-        border-top-left-radius: var(--border-radius);
-        border-top-right-radius: var(--border-radius);
+        border-top-left-radius: var(--panel-border-radius); /* Match panel radius */
+        border-top-right-radius: var(--panel-border-radius); /* Match panel radius */
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -233,8 +238,8 @@
       background-color: var(--panel-bg);
       color: var(--text-color);
       box-sizing: border-box; /* Include padding in width */
-      border-bottom-left-radius: var(--border-radius);
-      border-bottom-right-radius: var(--border-radius);
+      border-bottom-left-radius: var(--panel-border-radius); /* Match panel radius */
+      border-bottom-right-radius: var(--panel-border-radius); /* Match panel radius */
     }
 
     #svg-container {
@@ -245,8 +250,8 @@
       overflow: auto;
       background-color: var(--panel-bg);
       padding: 18px; /* Match panel padding */
-      border-bottom-left-radius: var(--border-radius);
-      border-bottom-right-radius: var(--border-radius);
+      border-bottom-left-radius: var(--panel-border-radius); /* Match panel radius */
+      border-bottom-right-radius: var(--panel-border-radius); /* Match panel radius */
     }
 
     #svg-container svg {
@@ -320,7 +325,7 @@
       padding: 15px; /* Slightly reduced padding */
       gap: 10px; /* Reduce gap within the form for denser layout */
     }
-    
+
     #relationship-form-container h3 {
         margin-top: 0;
         margin-bottom: 10px; /* Reduced margin */
@@ -479,7 +484,10 @@
   </style>
 </head>
 <body>
-  <h2><i class="fas fa-sparkles"></i>AI Slop at its Finest</h2>
+  <h2>
+    <img src="https://upload.wikimedia.org/wikipedia/commons/3/30/Plantuml_Logo.svg" alt="PlantUML Logo" class="logo">
+    PlantUML Editor
+  </h2>
 
   <div id="sidebar">
     <div class="sidebar-section">
@@ -489,6 +497,7 @@
             <option value="component-deployment">UML Component & Deployment</option>
             <option value="use-case">UML Use Case</option>
             <option value="state">UML State</option>
+            <option value="activity">UML Activity</option>
             <option value="sequence">UML Sequence</option>
             <option value="c4-general">C4 Model & General Containers</option>
         </select>
@@ -604,11 +613,27 @@ R .. J : "asdf"
             return matchAlias[1];
           }
 
-          const elementTypes = ['class', 'interface', 'abstract class', 'enum', 'component', 'package', 'node', 'database', 'actor', 'usecase', 'state', 'sequence', 'boundary', 'control', 'entity', 'collections', 'participant', 'note', 'rectangle', 'cloud', 'agent', 'folder', 'frame', 'card', 'queue', 'artifact'];
+          // More specific regex to extract alias/name from various element types and C4 macros
+          const elementTypes = ['class', 'interface', 'abstract class', 'enum', 'component', 'node', 'database', 'actor', 'usecase', 'state', 'activity', 'sequence', 'boundary', 'control', 'entity', 'collections', 'participant', 'note', 'rectangle', 'cloud', 'agent', 'folder', 'frame', 'card', 'queue', 'artifact', 'start', 'stop', 'detach', 'kill', 'diamond', 'fork', 'join', 'partition']; // Added activity keywords
           const typeRegex = new RegExp(`^(?:${elementTypes.map(t => t.replace(' ', '\\s+')).join('|')})\\s+(?:\"([^\"]+)\"|([a-zA-Z0-9_]+))`, 'i');
           let matchName = svgTitle.match(typeRegex);
           if (matchName) {
             return matchName[2] || matchName[1];
+          }
+
+          // C4 Model Macro Parsing (Person, System, Container, Component, etc.)
+          // Matches: Person(alias, "Label", "Description") -> extracts 'alias'
+          const c4MacroRegex = /(Person|System|Container|ContainerDb|Component)(_Ext)?\s*\(\s*(\w+)/i;
+          let c4Match = svgTitle.match(c4MacroRegex);
+          if (c4Match && c4Match[3]) {
+              return c4Match[3]; // The alias from the macro call
+          }
+
+          // Activity diagram element with (label) as alias
+          const activityAliasRegex = /\(([^)]+)\)\s+as\s+(\w+)/i;
+          let activityMatch = svgTitle.match(activityAliasRegex);
+          if (activityMatch && activityMatch[2]) {
+              return activityMatch[2];
           }
 
           if (svgTitle.startsWith("rel-")) {
@@ -630,40 +655,69 @@ R .. J : "asdf"
           // Find the declaration line for the given plantUMLId
           const lines = sourceCode.split('\n');
           let declarationLine = null;
-          // Regex to match:
-          // 1. "Some Type" "Label" as Alias { ... }
-          // 2. SomeType Label as Alias { ... }
-          // 3. "SomeType" as Alias { ... }
-          // 4. SomeType as Alias { ... }
-          // 5. Alias { ... } (if it's a direct reference like in C4)
-          // Make the regex more robust to correctly identify the declaration for a given alias/name.
-          // It looks for a line starting with an element type, followed by an optional name in quotes or an unquoted name,
-          // then optionally 'as' and the alias.
-          // Or, just the alias/name if it's referenced directly (like for PlantUML components).
+
           const escapedId = plantUMLId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const declarationKeywords = [
+              '(?:abstract\\s+)?class', 'interface', 'enum', 'component', 'package', 'node', 'database', 'actor', 'usecase',
+              'state', 'activity', 'sequence', 'boundary', 'control', 'entity', 'collections', 'participant', 'note',
+              'rectangle', 'cloud', 'agent', 'folder', 'frame', 'card', 'queue', 'artifact', 'start', 'stop', 'detach', 'kill', 'diamond', 'fork', 'join', 'partition']; // Added activity keywords
           const declarationRegex = new RegExp(
-              `^(?!.*(?:->|--))[\\s]*(?:(?:abstract\\s+)?class|interface|enum|component|package|node|database|actor|usecase|state|sequence|boundary|control|entity|collections|participant|note|rectangle|cloud|agent|folder|frame|card|queue|artifact)?\\s*(?:\"[^\"]+\"|\\b\\w+\\b)?(?:\\s+as\\s+${escapedId})?\\b(?:\\s*\\{[^}]*\\})?`
+              `^(?!.*(?:->|--))[\\s]*(?:${declarationKeywords.map(k => k.replace(' ', '\\s+')).join('|')})\\s*(?:\"[^\"]+\"|\\b\\w+\\b)?(?:\\s+as\\s+${escapedId})?\\b(?:\\s*\\{[^}]*\\})?`
               , 'i'
           );
 
+          // Additional regex for C4 macros and activity (label) as alias
+          const c4MacroDeclarationRegex = new RegExp(`(Person|System|Container|ContainerDb|Component)(_Ext)?\\s*\\(\\s*${escapedId}\\b`, 'i');
+          const activityAliasDeclarationRegex = new RegExp(`\\(([^)]+)\\)\\s+as\\s+${escapedId}\\b`, 'i');
+
+
           for (const line of lines) {
-              if (line.match(declarationRegex)) {
-                  // Additional check to ensure it's not a relationship line that coincidentally contains the ID
-                  if (!line.includes('->') && !line.includes('--') && (line.includes(`as ${plantUMLId}`) || line.match(new RegExp(`\\b${escapedId}\\b(?![a-zA-Z0-9_])`)))) { // Added negative lookahead to prevent partial matches
+              // Standard elements
+              if (line.match(declarationRegex) && (line.includes(`as ${plantUMLId}`) || line.match(new RegExp(`\\b${escapedId}\\b(?![a-zA-Z0-9_])`)))) {
+                  if (!line.includes('->') && !line.includes('--')) { // Ensure it's not a relationship line
                       declarationLine = line;
                       break;
                   }
+              }
+              // C4 macros (check for alias in the macro arguments)
+              if (line.match(c4MacroDeclarationRegex)) {
+                  declarationLine = line;
+                  break;
+              }
+              // Activity (label) as alias
+              if (line.match(activityAliasDeclarationRegex)) {
+                  declarationLine = line;
+                  break;
+              }
+              // Direct keywords like 'start', 'stop' might not have explicit aliases but are IDs.
+              // For these, we'll use the keyword itself as the 'declaration'.
+              const directKeywordMatch = line.trim().match(new RegExp(`^\\b(${escapedId})\\b$`, 'i'));
+              if (directKeywordMatch && ['start', 'stop', 'detach', 'kill'].includes(directKeywordMatch[1].toLowerCase())) {
+                  declarationLine = line;
+                  break;
               }
           }
 
           if (declarationLine) {
               // Extract name/alias from the actual declaration if available
-              const elementTypes = ['class', 'interface', 'abstract class', 'enum', 'component', 'package', 'node', 'database', 'actor', 'usecase', 'state', 'sequence', 'boundary', 'control', 'entity', 'collections', 'participant', 'note', 'rectangle', 'cloud', 'agent', 'folder', 'frame', 'card', 'queue', 'artifact'];
+              const elementTypes = ['class', 'interface', 'abstract class', 'enum', 'component', 'package', 'node', 'database', 'actor', 'usecase', 'state', 'activity', 'sequence', 'boundary', 'control', 'entity', 'collections', 'participant', 'note', 'rectangle', 'cloud', 'agent', 'folder', 'frame', 'card', 'queue', 'artifact', 'diamond'];
               const nameAliasRegex = new RegExp(`(?:${elementTypes.map(t => t.replace(' ', '\\s+')).join('|')})\\s+(?:\"([^\"]+)\"|(\\w+))`, 'i');
               const nameMatch = declarationLine.match(nameAliasRegex);
 
               if (nameMatch) {
                   properties.name = nameMatch[1] || nameMatch[2] || plantUMLId; // Prefer quoted, then unquoted, then alias
+              }
+
+              // Handle C4 macro labels
+              const c4LabelMatch = declarationLine.match(/(Person|System|Container|ContainerDb|Component)(_Ext)?\s*\(\s*\w+\s*,\s*\"([^\"]+)\"/i);
+              if (c4LabelMatch && c4LabelMatch[3]) {
+                  properties.name = c4LabelMatch[3];
+              }
+
+              // Handle Activity (label) as alias
+              const activityLabelMatch = declarationLine.match(/\(([^)]+)\)\s+as\s+\w+/i);
+              if (activityLabelMatch && activityLabelMatch[1]) {
+                  properties.name = activityLabelMatch[1].trim();
               }
 
 
@@ -687,18 +741,45 @@ R .. J : "asdf"
           return properties;
       },
 
+
       // NEW UTILITY: Extract the full declaration line for a given PlantUML ID
       extractDeclarationForPreview: function(plantUMLId, sourceCode) {
           const lines = sourceCode.split('\n');
           const escapedId = plantUMLId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          const declarationRegex = new RegExp(
-              `^(?!.*(?:->|--))[\\s]*(?:(?:abstract\\s+)?class|interface|enum|component|package|node|database|actor|usecase|state|sequence|boundary|control|entity|collections|participant|note|rectangle|cloud|agent|folder|frame|card|queue|artifact)?\\s*(?:\"[^\"]+\"|\\b\\w+\\b)?(?:\\s+as\\s+${escapedId})?\\b(?:\\s*\\{[^}]*\\})?`
+
+          const declarationKeywords = [
+              '(?:abstract\\s+)?class', 'interface', 'enum', 'component', 'package', 'node', 'database', 'actor', 'usecase',
+              'state', 'activity', 'sequence', 'boundary', 'control', 'entity', 'collections', 'participant', 'note',
+              'rectangle', 'cloud', 'agent', 'folder', 'frame', 'card', 'queue', 'artifact', 'diamond', 'fork', 'join',
+              'partition',
+          ];
+
+          // Regex to match declarations that either use 'as ALIAS' or implicitly use the name as ID
+          const specificDeclarationRegex = new RegExp(
+              `^(?!.*(?:->|--))[\\s]*(?:${declarationKeywords.map(k => k.replace(' ', '\\s+')).join('|')})\\s*(?:\"[^\"]+\"|\\b${escapedId}\\b)(?:\\s+as\\s+${escapedId})?\\b(?:\\s*\\{[^}]*\\})?`
               , 'i'
           );
 
+          // Regex for C4 macros
+          const c4MacroDeclarationRegex = new RegExp(`(Person|System|Container|ContainerDb|Component)(_Ext)?\\s*\\(\\s*${escapedId}\\b`, 'i');
+
+          // Regex for activity elements like `(label) as alias`
+          const activityAliasDeclarationRegex = new RegExp(`\\(([^)]+)\\)\\s+as\\s+${escapedId}\\b`, 'i');
+
+          // Check for direct keywords like start/stop that don't have aliases
+          const directKeywordMatch = ['start', 'stop', 'detach', 'kill'].includes(plantUMLId.toLowerCase());
+
           for (const line of lines) {
-              // Ensure it matches the ID directly and isn't a relationship line
-              if (line.match(declarationRegex) && (line.includes(`as ${plantUMLId}`) || line.match(new RegExp(`\\b${escapedId}\\b(?![a-zA-Z0-9_])`)))) {
+              if (line.match(specificDeclarationRegex)) {
+                  return line.trim();
+              }
+              if (line.match(c4MacroDeclarationRegex)) {
+                  return line.trim();
+              }
+              if (line.match(activityAliasDeclarationRegex)) {
+                  return line.trim();
+              }
+              if (directKeywordMatch && line.trim().toLowerCase() === plantUMLId.toLowerCase()) {
                   return line.trim();
               }
           }
@@ -714,19 +795,29 @@ R .. J : "asdf"
           let foundDeclaration = false;
 
           const escapedId = plantUMLId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          // This regex now tries to find the element declaration that uses the plantUMLId as its ALIAS OR PRIMARY NAME
-          // It accounts for element types, quoted names, unquoted names, and the 'as' alias.
-          // It also explicitly avoids matching relationship lines.
+          const declarationKeywords = [
+              '(?:abstract\\s+)?class', 'interface', 'enum', 'component', 'package', 'node', 'database', 'actor', 'usecase',
+              'state', 'activity', 'sequence', 'boundary', 'control', 'entity', 'collections', 'participant', 'note',
+              'rectangle', 'cloud', 'agent', 'folder', 'frame', 'card', 'queue', 'artifact', 'diamond', 'fork', 'join',
+              'partition'];
           const declarationRegex = new RegExp(
-              `^(?!.*(?:->|--))[\\s]*(?:(?:abstract\\s+)?class|interface|enum|component|package|node|database|actor|usecase|state|sequence|boundary|control|entity|collections|participant|note|rectangle|cloud|agent|folder|frame|card|queue|artifact)?\\s*(?:\"[^\"]+\"|\\b\\w+\\b)?(?:\\s+as\\s+${escapedId})?\\b(?:\\s*\\{[^}]*\\})?`
+              `^(?!.*(?:->|--))[\\s]*(?:${declarationKeywords.map(k => k.replace(' ', '\\s+')).join('|')})\\s*(?:\"[^\"]+\"|\\b\\w+\\b)?(?:\\s+as\\s+${escapedId})?\\b(?:\\s*\\{[^}]*\\})?`
               , 'i'
           );
+          const c4MacroDeclarationRegex = new RegExp(`(Person|System|Container|ContainerDb|Component)(_Ext)?\\s*\\(\\s*${escapedId}\\b`, 'i');
+          const activityAliasDeclarationRegex = new RegExp(`\\(([^)]+)\\)\\s+as\\s+${escapedId}\\b`, 'i');
+          const directKeywordMatch = ['start', 'stop', 'detach', 'kill'].includes(plantUMLId.toLowerCase());
 
 
           for (let i = 0; i < lines.length; i++) {
               let line = lines[i];
               // Ensure we only modify the *first* declaration line found for the ID and that it's not a relationship line
-              if (!foundDeclaration && line.match(declarationRegex) && (line.includes(`as ${plantUMLId}`) || line.match(new RegExp(`\\b${escapedId}\\b(?![a-zA-Z0-9_])`)))) { // Added negative lookahead
+              if (!foundDeclaration && (
+                  (line.match(declarationRegex) && (line.includes(`as ${plantUMLId}`) || line.match(new RegExp(`\\b${escapedId}\\b(?![a-zA-Z0-9_])`)))) ||
+                  line.match(c4MacroDeclarationRegex) ||
+                  line.match(activityAliasDeclarationRegex) ||
+                  (directKeywordMatch && line.trim().toLowerCase() === plantUMLId.toLowerCase())
+              )) {
                   foundDeclaration = true;
 
                   let propertiesBlock = '';
@@ -818,53 +909,70 @@ R .. J : "asdf"
 
       diagramComponentData: {
           'class-object': [
-              { type: 'class', label: 'Class', icon: 'fas fa-box' },
-              { type: 'interface', label: 'Interface', icon: 'fas fa-code-branch' },
-              { type: 'abstract class', label: 'Abstract Class', icon: 'fas fa-boxes' },
+              { type: 'class', label: 'Class', icon: 'fas fa-cube' },
+              { type: 'interface', label: 'Interface', icon: 'fas fa-handshake' },
+              { type: 'abstract class', label: 'Abstract Class', icon: 'fas fa-cubes' },
               { type: 'enum', label: 'Enum', icon: 'fas fa-list-ol' },
-              { type: 'package', label: 'Package', icon: 'fas fa-cube' },
-              { type: 'note', label: 'Note', icon: 'fas fa-sticky-note' }
+              { type: 'annotation', label: 'Annotation', icon: 'fas fa-tag' },
+              { type: 'note', label: 'Note', icon: 'fas fa-note-sticky' }
           ],
           'component-deployment': [
-              { type: 'component', label: 'Component', icon: 'fas fa-cogs' },
+              { type: 'component', label: 'Component', icon: 'fas fa-box-archive' },
+              { type: 'interface', label: 'Interface', icon: 'fas fa-link' },
               { type: 'node', label: 'Node', icon: 'fas fa-server' },
               { type: 'database', label: 'Database', icon: 'fas fa-database' },
               { type: 'cloud', label: 'Cloud', icon: 'fas fa-cloud' },
               { type: 'agent', label: 'Agent', icon: 'fas fa-robot' },
               { type: 'artifact', label: 'Artifact', icon: 'fas fa-file-code' },
-              { type: 'package', label: 'Package', icon: 'fas fa-cube' },
-              { type: 'note', label: 'Note', icon: 'fas fa-sticky-note' },
-              { type: 'rectangle', label: 'Rectangle', icon: 'fas fa-square' }
+              { type: 'note', label: 'Note', icon: 'fas fa-note-sticky' }
           ],
           'use-case': [
-              { type: 'actor', label: 'Actor', icon: 'fas fa-user' },
-              { type: 'usecase', label: 'Usecase', icon: 'fas fa-circle' },
-              { type: 'package', label: 'Package', icon: 'fas fa-cube' },
-              { type: 'note', label: 'Note', icon: 'fas fa-sticky-note' },
-              { type: 'rectangle', label: 'Rectangle', icon: 'fas fa-square' }
+              { type: 'actor', label: 'Actor', icon: 'fas fa-person' },
+              { type: 'usecase', label: 'Use Case', icon: 'far fa-circle' },
+              { type: 'note', label: 'Note', icon: 'fas fa-note-sticky' }
           ],
           'state': [
-              { type: 'state', label: 'State', icon: 'fas fa-adjust' },
-              { type: 'note', label: 'Note', icon: 'fas fa-sticky-note' },
-              { type: 'rectangle', label: 'Rectangle', icon: 'fas fa-square' }
+              { type: 'state', label: 'State', icon: 'fas fa-circle-dot' },
+              { type: 'start_state', label: 'Initial State', icon: 'fas fa-play-circle' },
+              { type: 'final_state', label: 'Final State', icon: 'fas fa-stop-circle' },
+              { type: 'choice_state', label: 'Choice', icon: 'fas fa-diamond' },
+              { type: 'junction_state', label: 'Junction', icon: 'fas fa-circle' },
+              { type: 'terminate_state', label: 'Terminate', icon: 'fas fa-times' },
+              { type: 'history_state', label: 'History', icon: 'fas fa-history' },
+              { type: 'note', label: 'Note', icon: 'fas fa-note-sticky' }
+          ],
+          'activity': [ // New Activity Diagram
+              { type: 'start_activity', label: 'Start', icon: 'fas fa-play-circle' },
+              { type: 'stop_activity', label: 'End', icon: 'fas fa-stop-circle' },
+              { type: 'activity_action', label: 'Activity/Action', icon: 'fas fa-shoe-prints' },
+              { type: 'decision_activity', label: 'Decision', icon: 'fas fa-question-circle' },
+              { type: 'fork_activity', label: 'Fork', icon: 'fas fa-code-branch' },
+              { type: 'join_activity', label: 'Join', icon: 'fas fa-code-merge' },
+              { type: 'partition_activity', label: 'Partition', icon: 'fas fa-columns' },
+              { type: 'note', label: 'Note', icon: 'fas fa-note-sticky' },
+              { type: 'detach_activity', label: 'Detach', icon: 'fas fa-arrow-right-from-bracket' },
+              { type: 'kill_activity', label: 'Kill', icon: 'fas fa-skull' }
           ],
           'sequence': [
-              { type: 'actor', label: 'Actor', icon: 'fas fa-user' },
-              { type: 'participant', label: 'Participant', icon: 'fas fa-user-friends' },
-              { type: 'boundary', label: 'Boundary', icon: 'fas fa-border-all' },
+              { type: 'participant', label: 'Participant', icon: 'fas fa-user' },
+              { type: 'actor', label: 'Actor', icon: 'fas fa-person' },
+              { type: 'boundary', label: 'Boundary', icon: 'fas fa-box' },
               { type: 'control', label: 'Control', icon: 'fas fa-gamepad' },
-              { type: 'entity', label: 'Entity', icon: 'fas fa-box-open' },
+              { type: 'entity', label: 'Entity', icon: 'fas fa-cube' },
               { type: 'database', label: 'Database', icon: 'fas fa-database' },
-              { type: 'note', label: 'Note', icon: 'fas fa-sticky-note' }
-          ],
-          'c4-general': [
-              { type: 'folder', label: 'Folder', icon: 'fas fa-folder' },
-              { type: 'frame', label: 'Frame', icon: 'fas fa-border-none' },
-              { type: 'card', label: 'Card', icon: 'fas fa-id-card' },
+              { type: 'collections', label: 'Collections', icon: 'fas fa-cubes' },
               { type: 'queue', label: 'Queue', icon: 'fas fa-stream' },
-              { type: 'collections', label: 'Collections', icon: 'fas fa-th-large' },
-              { type: 'rectangle', label: 'Rectangle', icon: 'fas fa-square' },
-              { type: 'note', label: 'Note', icon: 'fas fa-sticky-note' }
+              { type: 'note', label: 'Note', icon: 'fas fa-note-sticky' }
+          ],
+          'c4-general': [ // C4 model elements (keeping the existing ones)
+              { type: 'Person', label: 'Person', icon: 'fas fa-user-circle' },
+              { type: 'Person_Ext', label: 'External Person', icon: 'fas fa-user-slash' },
+              { type: 'System', label: 'System', icon: 'fas fa-desktop' },
+              { type: 'System_Ext', label: 'External System', icon: 'fas fa-server' },
+              { type: 'Container', label: 'Container', icon: 'fas fa-box' },
+              { type: 'ContainerDb', label: 'Container DB', icon: 'fas fa-database' },
+              { type: 'Component', label: 'Component', icon: 'fas fa-box-archive' },
+              { type: 'note', label: 'Note', icon: 'fas fa-note-sticky' }
           ]
       },
 
@@ -877,11 +985,13 @@ R .. J : "asdf"
         onClearDiagram: null,
         onPropertyChange: null,
         onRelationshipFormChange: null, // New callback for relationship form input/select changes
+        onClearSelectionRequest: null, // NEW callback for global deselection
       },
 
       init: function(appCallbacks) {
         Object.assign(this.callbacks, appCallbacks);
         this._setupEventListeners();
+        // NOW call renderComponentButtons AFTER listeners are set up.
         this.renderComponentButtons(this.elements.diagramTypeSelect.value);
         this.positionRelationshipForm(); // Initial positioning, though it's hidden
       },
@@ -895,8 +1005,11 @@ R .. J : "asdf"
           this.callbacks.onRenderRequest && this.callbacks.onRenderRequest();
         });
 
+        // This is the key change: ensure this listener is active
         this.elements.diagramTypeSelect.addEventListener('change', () => {
             this.renderComponentButtons(this.elements.diagramTypeSelect.value);
+            // Optionally, clear existing diagram when changing type
+            // this.callbacks.onClearDiagram && this.callbacks.onClearDiagram();
         });
 
         this.elements.diagramComponentButtons.addEventListener('click', (event) => {
@@ -952,6 +1065,24 @@ R .. J : "asdf"
                 );
             }
         }, 500));
+
+        // NEW: Click on empty SVG space to deselect
+        this.elements.svgContainer.addEventListener('click', (e) => {
+            // Check if the click target is the svg element itself or directly within it,
+            // and not an interactive 'g' element that represents a PlantUML component or link.
+            const clickedInteractiveElement = e.target.closest("g.entity, g:has(title), g.link");
+            if (!clickedInteractiveElement) {
+                // Clicked on empty space within SVG container or on the SVG itself
+                this.callbacks.onClearSelectionRequest && this.callbacks.onClearSelectionRequest();
+            }
+        });
+
+        // NEW: Escape key to deselect
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this.callbacks.onClearSelectionRequest && this.callbacks.onClearSelectionRequest();
+            }
+        });
       },
 
       renderComponentButtons: function(diagramType) {
@@ -1143,20 +1274,32 @@ R .. J : "asdf"
 
           let tempPlantUml = "@startuml\n";
 
-          // Get the full declaration lines from the main source
+          // Try to get the full declaration lines from the main source
           let sourceDeclaration = Utils.extractDeclarationForPreview(sourceId, fullSource);
           let targetDeclaration = Utils.extractDeclarationForPreview(targetId, fullSource);
 
-          // If declarations weren't found (e.g., for elements added programmatically or not fully declared),
-          // create generic ones to ensure the preview renders.
+          // Fallback if specific declarations aren't found or for special keywords
+          const generateGenericDeclaration = (id) => {
+            const lowerId = id.toLowerCase();
+            if (lowerId === 'start') return 'start';
+            if (lowerId === 'stop') return 'stop';
+            if (lowerId === 'detach') return 'detach';
+            if (lowerId === 'kill') return 'kill';
+
+            // Heuristic to guess if it's a quoted name or needs quoting
+            const displayName = id.includes(' ') ? id : id.split(/(?=[A-Z])/).join(' ');
+            const quotedDisplayName = `"${displayName}"`;
+
+            // A more robust fallback could try to guess type from current diagramType or common types
+            // For now, default to `class` if it's not a special keyword.
+            return `class ${quotedDisplayName} as ${id}`;
+          };
+
           if (!sourceDeclaration) {
-              // Attempt to use the ID as a quoted name first, then just the ID
-              const sourceQuotedName = sourceId.includes(' ') ? `"${sourceId}"` : sourceId;
-              sourceDeclaration = `class ${sourceQuotedName} as ${sourceId}`;
+              sourceDeclaration = generateGenericDeclaration(sourceId);
           }
           if (!targetDeclaration) {
-              const targetQuotedName = targetId.includes(' ') ? `"${targetId}"` : targetId;
-              targetDeclaration = `class ${targetQuotedName} as ${targetId}`;
+              targetDeclaration = generateGenericDeclaration(targetId);
           }
 
           tempPlantUml += `${sourceDeclaration}\n`;
@@ -1169,7 +1312,6 @@ R .. J : "asdf"
           tempPlantUml += "\n@enduml";
 
           console.log("PlantUML Preview Source:\n", tempPlantUml); // Debugging: Log the generated PlantUML for the preview
-          // alert("Preview PlantUML:\n" + tempPlantUml); // Optional: Pop up an alert for quick debugging
 
 
           // Use the DiagramRenderer but target the specific preview container
@@ -1215,6 +1357,7 @@ R .. J : "asdf"
           element.classList.remove("hover-highlight");
           element.classList.add("selected-element");
         } else {
+          // FIX: Corrected the class name from "selected-highlight" to "selected-element"
           element.classList.remove("selected-element");
           if (element.matches(':hover')) {
             element.classList.add("hover-highlight");
@@ -1320,6 +1463,7 @@ R .. J : "asdf"
         this.selectedPlantUMLIds = [];
         this.selectedSVGElementRefs = [];
         this.onSelectionChangeCallback && this.onSelectionChangeCallback(this.selectedPlantUMLIds);
+        console.log("SelectionManager: Selection cleared."); // Added for debugging
       },
 
       reapplySelectionHighlights: function(svgContainerElement) {
@@ -1433,7 +1577,8 @@ R .. J : "asdf"
           onCancelRelationship: this.cancelRelationship.bind(this),
           onClearDiagram: this.clearDiagram.bind(this),
           onPropertyChange: this.handlePropertyChange.bind(this),
-          onRelationshipFormChange: this.handleRelationshipFormChange.bind(this) // New callback
+          onRelationshipFormChange: this.handleRelationshipFormChange.bind(this), // New callback
+          onClearSelectionRequest: this.handleClearSelectionRequest.bind(this) // NEW: Pass the handler
         });
 
         this.selectionManager.init(
@@ -1494,7 +1639,7 @@ R .. J : "asdf"
             this.currentPreviewTargetId = updatedSelections[1];
             // Keep properties of the *first* selected element (or simply don't update properties pane now)
             this.uiManager.updatePropertiesPane(updatedSelections[0], this.uiManager.getPlantUmlSource());
-            // Trigger initial preview render now that both IDs are set
+            // Trigger initial preview render NOW that both IDs are set
             this.handleRelationshipFormChange(); // This will call UIManager.renderRelationshipPreview
         } else { // 0 selections after toggle (e.g., deselected the last item, or clicked a 3rd item)
             this.uiManager.resetPropertiesPane(); // Reset properties pane
@@ -1505,26 +1650,120 @@ R .. J : "asdf"
         }
       }
 
+      // NEW: Central handler for any request to clear selection
+      handleClearSelectionRequest() {
+          this.selectionManager.clearSelection();
+          this.uiManager.resetPropertiesPane();
+          this.uiManager.elements.relationshipFormContainer.style.display = 'none';
+          this.uiManager.clearRelationshipPreview();
+          this.currentPreviewSourceId = null;
+          this.currentPreviewTargetId = null;
+      }
+
 
       insertPlantUMLDirective(type) {
-        this.selectionManager.clearSelection(); // Clear selection when adding new element
-        this.uiManager.resetPropertiesPane(); // Reset properties pane
-        this.uiManager.elements.relationshipFormContainer.style.display = 'none'; // Hide relationship form
-        this.uiManager.clearRelationshipPreview(); // Clear preview
+        this.handleClearSelectionRequest(); // Clear selection when adding new element
 
         const currentSource = this.uiManager.getPlantUmlSource();
         const existingNames = this._extractExistingPlantUMLNames(currentSource);
         const randomName = Utils.generateRandomLetter(existingNames);
 
         let directive;
-        if (type === 'note') {
-          directive = `note "New Note ${randomName}" as ${randomName}\n`;
-        } else if (type === 'abstract class') {
-          directive = `abstract class "Abstract Class ${randomName}" as ${randomName}\n`;
-        } else if (type === 'participant') {
-          directive = `participant "${type} ${randomName}" as ${randomName}\n`;
-        } else {
-          directive = `${type} "${type} ${randomName}" as ${randomName}\n`;
+        switch (type) {
+            // General Elements
+            case 'class':
+            case 'interface':
+            case 'abstract class':
+            case 'enum':
+            case 'annotation':
+            case 'component':
+            case 'node':
+            case 'database':
+            case 'cloud':
+            case 'agent':
+            case 'artifact':
+            case 'actor':
+            case 'usecase':
+            case 'boundary':
+            case 'control':
+            case 'entity':
+            case 'collections':
+            case 'queue':
+                directive = `${type} "New ${type.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} ${randomName}" as ${randomName}\n`;
+                break;
+
+            // State Diagram specific elements
+            case 'state':
+                directive = `state "New State ${randomName}" as ${randomName}\n`;
+                break;
+            case 'start_state':
+                directive = `state "Initial State" as Initial${randomName} <<start>>\n`;
+                break;
+            case 'final_state':
+                directive = `state "Final State" as Final${randomName} <<end>>\n`;
+                break;
+            case 'choice_state':
+                directive = `state "Choice" as Choice${randomName} <<choice>>\n`;
+                break;
+            case 'junction_state':
+                directive = `state "Junction" as Junction${randomName} <<junction>>\n`;
+                break;
+            case 'terminate_state':
+                directive = `state "Terminate" as Terminate${randomName} <<terminate>>\n`;
+                break;
+            case 'history_state':
+                directive = `state "History" as History${randomName} <<history>>\n`;
+                break;
+
+            // Activity Diagram specific elements
+            case 'start_activity':
+                directive = `start\n`;
+                break;
+            case 'stop_activity':
+                directive = `stop\n`;
+                break;
+            case 'activity_action':
+                // Using (Label) as Alias syntax for activities to make them clearly linkable.
+                directive = `(New Activity ${randomName}) as ${randomName}\n`;
+                break;
+            case 'decision_activity':
+                // A standalone diamond for a decision point
+                directive = `diamond "Condition ${randomName}?" as ${randomName}\n`;
+                break;
+            case 'fork_activity':
+                directive = `fork Fork${randomName}\nend fork\n`; // Creates a named fork block
+                break;
+            case 'join_activity':
+                directive = `join Join${randomName}\n`; // Creates a named join
+                break;
+            case 'partition_activity':
+                directive = `partition "New Partition ${randomName}" {\n  ' -- Add elements inside --\n}\n`; // Creates a named partition block
+                break;
+            case 'detach_activity':
+                directive = `detach\n`;
+                break;
+            case 'kill_activity':
+                directive = `kill\n`;
+                break;
+            case 'note':
+                directive = `note "New Note ${randomName}" as ${randomName}\n`;
+                break;
+
+            // C4 Model specific elements (these are macros, so they don't use 'as Alias' directly)
+            // Assumes !includeurl for C4-PlantUML is present in the source.
+            case 'Person':
+            case 'Person_Ext':
+            case 'System':
+            case 'System_Ext':
+            case 'Container':
+            case 'ContainerDb':
+            case 'Component':
+                directive = `${type}(${randomName}, "New ${type} ${randomName}", "Description for ${type}")\n`;
+                break;
+            default:
+                console.warn(`Unhandled type for directive: ${type}. Using generic approach.`);
+                directive = `${type} "New ${type} ${randomName}" as ${randomName}\n`;
+                break;
         }
 
         const endUmlIndex = currentSource.lastIndexOf("@enduml");
@@ -1544,18 +1783,48 @@ R .. J : "asdf"
 
       _extractExistingPlantUMLNames(source) {
           const existingNames = new Set();
-          const elementDeclarationRegex = /(?:(?:abstract\s+)?class|interface|enum|component|package|node|database|actor|usecase|state|sequence|boundary|control|entity|collections|participant|note|rectangle|cloud|agent|folder|frame|card|queue|artifact)\s+(?:\"([^\"]+)\"|(\w+))(?:\s+as\s+(\w+))?/g;
+          // Regex for standard element declarations (class, interface, component, state, etc.)
+          // Captures 'as Alias', or unquoted name, or quoted name if no 'as' (less reliable for alias)
+          const elementDeclarationRegex = /(?:(?:abstract\s+)?class|interface|enum|component|package|node|database|actor|usecase|state|activity|sequence|boundary|control|entity|collections|participant|note|rectangle|cloud|agent|folder|frame|card|queue|artifact|diamond|fork|join|partition)\s+(?:\"([^\"]+)\"|(\w+))(?:\s+as\s+(\w+))?/g;
+
+          // Regex for C4 model element declarations (e.g., Person(alias, ...), System(alias, ...))
+          // Captures the alias as the 3rd group
+          const c4MacroRegex = /(Person|System|Container|ContainerDb|Component)(_Ext)?\s*\(\s*(\w+)/g;
+
+          // Regex for activity elements (e.g., (Activity Label) as Alias)
+          // Captures alias in group 2
+          const activityElementAliasRegex = /\(([^)]+)\)\s+as\s+(\w+)/g;
+
+          // Regex for state pseudo-states defined with `state "Label" as Alias <<type>>`
+          const statePseudoAliasRegex = /state\s*(?:\"[^\"]+\"|(\w+))\s+as\s+(\w+)\s+<<(?:start|end|choice|junction|terminate|history)>>/g;
+
+          // Basic keywords that might appear as PlantUML IDs implicitly or if explicitly named (e.g. `start MyStart`)
+          // Not typically aliased with 'as', but PlantUML generates internal IDs.
+          // This is a more complex case for collisions. For now, rely on aliases.
+          // const keywordRegex = /\b(start|stop|detach|kill)\b/g;
 
           let match;
+
           while ((match = elementDeclarationRegex.exec(source)) !== null) {
-              if (match[3]) {
-                  existingNames.add(match[3]);
-              } else if (match[2]) {
-                  existingNames.add(match[2]);
-              } else if (match[1]) {
-                  existingNames.add(match[1]);
-              }
+              if (match[3]) { existingNames.add(match[3]); } // Explicit 'as Alias'
+              else if (match[2]) { existingNames.add(match[2]); } // Unquoted name acting as alias
+              // match[1] is quoted name without 'as', often not used as alias for linking
           }
+
+          while ((match = c4MacroRegex.exec(source)) !== null) {
+              if (match[3]) { existingNames.add(match[3]); } // Alias from C4 macro
+          }
+
+          while ((match = activityElementAliasRegex.exec(source)) !== null) {
+              if (match[2]) { existingNames.add(match[2]); } // Alias from (Activity) as Alias
+          }
+
+          while ((match = statePseudoAliasRegex.exec(source)) !== null) {
+              if (match[2]) { existingNames.add(match[2]); } // Alias from state <<type>>
+          }
+
+          // For keywords like 'start', 'stop', 'detach', 'kill', PlantUML assigns internal IDs like '_start1_'.
+          // We don't try to predict these, and assume generateRandomLetter will pick a non-colliding alias for *new* explicit aliases.
           return existingNames;
       }
 
@@ -1599,19 +1868,15 @@ R .. J : "asdf"
       }
 
       cancelRelationship() {
-        this.selectionManager.clearSelection();
-        this.uiManager.resetRelationshipForm();
-        this.uiManager.elements.relationshipFormContainer.style.display = 'none'; // Ensure form is hidden
-        this.uiManager.clearRelationshipPreview(); // Clear preview
-        this.uiManager.resetPropertiesPane(); // Reset properties pane to "Click an element"
-        this.currentPreviewSourceId = null;
-        this.currentPreviewTargetId = null;
+        this.handleClearSelectionRequest(); // Use the central handler
+        this.uiManager.resetRelationshipForm(); // Specific form reset
+        console.log("PlantUMLApp: Relationship cancelled, selection cleared.");
       }
 
       clearDiagram() {
         const defaultPlantUML = "@startuml\n@enduml";
         this.uiManager.setPlantUmlSource(defaultPlantUML);
-        this.cancelRelationship(); // This will clear selection, reset form, hide form, and reset properties pane
+        this.handleClearSelectionRequest(); // Clear selection, reset forms, etc.
         this.render();
         console.log("PlantUMLApp: Diagram cleared.");
       }
