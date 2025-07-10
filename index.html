@@ -878,36 +878,19 @@ R .. J : "asdf"
       }
     };
 
-    // --- 2. UI MANAGER MODULE ---
-    const UIManager = {
-      elements: {
-        svgContainer: document.getElementById("svg-container"),
-        tooltip: document.getElementById("tooltip"),
-        plantUmlSource: document.getElementById("plantuml-source"),
-        relationshipFormContainer: document.getElementById("relationship-form-container"),
-        selectedElementsSpan: document.getElementById("selected-elements"), // This element is now hidden by CSS
-        selectionMessage: document.getElementById("selection-message"), // This element is now hidden by CSS
-        relationshipTypeSelect: document.getElementById("relationship-type"),
-        relationshipLabelInput: document.getElementById("relationship-label"),
-        renderButton: document.getElementById("render-diagram-btn"),
-        addRelationshipBtn: document.getElementById("add-relationship-btn"),
-        cancelRelationshipBtn: document.getElementById("cancel-relationship-btn"),
-        clearDiagramBtn: document.getElementById("clear-diagram-btn"),
-        diagramTypeSelect: document.getElementById("diagram-type-select"),
-        diagramComponentButtons: document.getElementById("diagram-component-buttons"),
-        mainContent: document.getElementById("main-content"),
-        relationshipPreviewContainer: document.getElementById("relationship-preview-container"), // New Element
+    // --- 2. COMPONENT CLASSES ---
 
-        // Properties Pane elements
-        propertiesPane: document.getElementById("properties-pane"),
-        propertiesInfo: document.getElementById("properties-info"),
-        propertiesForm: document.getElementById("properties-form"),
-        propName: document.getElementById("prop-name"),
-        propBgColor: document.getElementById("prop-bgcolor"),
-        propLineColor: document.getElementById("prop-linecolor"),
-      },
+    // Sidebar Component Class
+    class Sidebar {
+      constructor(element) {
+        this.element = element;
+        this.diagramTypeSelect = element.querySelector('#diagram-type-select');
+        this.diagramComponentButtons = element.querySelector('#diagram-component-buttons');
+        
+        this.onDiagramTypeChange = null;
+        this.onInsertDirective = null;
 
-      diagramComponentData: {
+        this.diagramComponentData = {
           'class-object': [
               { type: 'class', label: 'Class', icon: 'fas fa-cube' },
               { type: 'interface', label: 'Interface', icon: 'fas fa-handshake' },
@@ -941,7 +924,7 @@ R .. J : "asdf"
               { type: 'history_state', label: 'History', icon: 'fas fa-history' },
               { type: 'note', label: 'Note', icon: 'fas fa-note-sticky' }
           ],
-          'activity': [ // New Activity Diagram
+          'activity': [
               { type: 'start_activity', label: 'Start', icon: 'fas fa-play-circle' },
               { type: 'stop_activity', label: 'End', icon: 'fas fa-stop-circle' },
               { type: 'activity_action', label: 'Activity/Action', icon: 'fas fa-shoe-prints' },
@@ -964,7 +947,7 @@ R .. J : "asdf"
               { type: 'queue', label: 'Queue', icon: 'fas fa-stream' },
               { type: 'note', label: 'Note', icon: 'fas fa-note-sticky' }
           ],
-          'c4-general': [ // C4 model elements (keeping the existing ones)
+          'c4-general': [
               { type: 'Person', label: 'Person', icon: 'fas fa-user-circle' },
               { type: 'Person_Ext', label: 'External Person', icon: 'fas fa-user-slash' },
               { type: 'System', label: 'System', icon: 'fas fa-desktop' },
@@ -974,161 +957,147 @@ R .. J : "asdf"
               { type: 'Component', label: 'Component', icon: 'fas fa-box-archive' },
               { type: 'note', label: 'Note', icon: 'fas fa-note-sticky' }
           ]
-      },
+        };
 
-      callbacks: {
-        onSvgElementClick: null,
-        onRenderRequest: null,
-        onInsertDirective: null,
-        onAddRelationship: null,
-        onCancelRelationship: null,
-        onClearDiagram: null,
-        onPropertyChange: null,
-        onRelationshipFormChange: null, // New callback for relationship form input/select changes
-        onClearSelectionRequest: null, // NEW callback for global deselection
-      },
-
-      init: function(appCallbacks) {
-        Object.assign(this.callbacks, appCallbacks);
         this._setupEventListeners();
-        // NOW call renderComponentButtons AFTER listeners are set up.
-        this.renderComponentButtons(this.elements.diagramTypeSelect.value);
-        this.positionRelationshipForm(); // Initial positioning, though it's hidden
-      },
+      }
 
-      _setupEventListeners: function() {
-        this.elements.plantUmlSource.addEventListener('input', Utils.debounce(() => {
-          this.callbacks.onRenderRequest && this.callbacks.onRenderRequest();
+      init(callbacks) {
+        this.onDiagramTypeChange = callbacks.onDiagramTypeChange;
+        this.onInsertDirective = callbacks.onInsertDirective;
+        this.renderComponentButtons(this.diagramTypeSelect.value);
+      }
+
+      _setupEventListeners() {
+        this.diagramTypeSelect.addEventListener('change', () => {
+          this.renderComponentButtons(this.diagramTypeSelect.value);
+          this.onDiagramTypeChange && this.onDiagramTypeChange();
+        });
+
+        this.diagramComponentButtons.addEventListener('click', (event) => {
+          const clickedButton = event.target.closest('button[data-action="insert-directive"]');
+          if (clickedButton) {
+            const type = clickedButton.dataset.type;
+            this.onInsertDirective && this.onInsertDirective(type);
+          }
+        });
+      }
+
+      renderComponentButtons(diagramType) {
+        this.diagramComponentButtons.innerHTML = '';
+        const components = this.diagramComponentData[diagramType];
+
+        if (components) {
+          components.forEach(comp => {
+            const button = document.createElement('button');
+            button.setAttribute('data-action', 'insert-directive');
+            button.setAttribute('data-type', comp.type);
+            button.innerHTML = `<i class="${comp.icon}"></i> <span>${comp.label}</span>`;
+            this.diagramComponentButtons.appendChild(button);
+          });
+        }
+      }
+    }
+
+    // Editor Panel Component Class
+    class EditorPanel {
+      constructor(element) {
+        this.element = element;
+        this.textarea = element.querySelector('#plantuml-source');
+        this.clearButton = element.querySelector('#clear-diagram-btn');
+        
+        this.onSourceChange = null;
+        this.onClearDiagram = null;
+
+        this._setupEventListeners();
+      }
+
+      init(callbacks) {
+        this.onSourceChange = callbacks.onSourceChange;
+        this.onClearDiagram = callbacks.onClearDiagram;
+      }
+
+      _setupEventListeners() {
+        this.textarea.addEventListener('input', Utils.debounce(() => {
+          this.onSourceChange && this.onSourceChange();
         }, 700));
 
-        this.elements.renderButton.addEventListener('click', () => {
-          this.callbacks.onRenderRequest && this.callbacks.onRenderRequest();
+        this.clearButton.addEventListener('click', () => {
+          this.onClearDiagram && this.onClearDiagram();
+        });
+      }
+
+      getSource() {
+        return this.textarea.value;
+      }
+
+      setSource(source) {
+        this.textarea.value = source;
+      }
+    }
+
+    // Preview Panel Component Class
+    class PreviewPanel {
+      constructor(element) {
+        this.element = element;
+        this.renderButton = element.querySelector('#render-diagram-btn');
+        this.svgContainer = element.querySelector('#svg-container');
+        this.tooltip = document.getElementById('tooltip');
+        
+        this.onRenderRequest = null;
+        this.onSvgElementClick = null;
+        this.onClearSelectionRequest = null;
+
+        this._setupEventListeners();
+      }
+
+      init(callbacks) {
+        this.onRenderRequest = callbacks.onRenderRequest;
+        this.onSvgElementClick = callbacks.onSvgElementClick;
+        this.onClearSelectionRequest = callbacks.onClearSelectionRequest;
+      }
+
+      _setupEventListeners() {
+        this.renderButton.addEventListener('click', () => {
+          this.onRenderRequest && this.onRenderRequest();
         });
 
-        // This is the key change: ensure this listener is active
-        this.elements.diagramTypeSelect.addEventListener('change', () => {
-            this.renderComponentButtons(this.elements.diagramTypeSelect.value);
-            // Optionally, clear existing diagram when changing type
-            // this.callbacks.onClearDiagram && this.callbacks.onClearDiagram();
-        });
-
-        this.elements.diagramComponentButtons.addEventListener('click', (event) => {
-            const clickedButton = event.target.closest('button[data-action="insert-directive"]');
-            if (clickedButton) {
-                const type = clickedButton.dataset.type;
-                this.callbacks.onInsertDirective && this.callbacks.onInsertDirective(type);
-            }
-        });
-
-        this.elements.clearDiagramBtn.addEventListener('click', () => {
-          this.callbacks.onClearDiagram && this.callbacks.onClearDiagram();
-        });
-
-        this.elements.addRelationshipBtn.addEventListener('click', () => {
-          this.callbacks.onAddRelationship && this.callbacks.onAddRelationship();
-        });
-
-        this.elements.cancelRelationshipBtn.addEventListener('click', () => {
-          this.callbacks.onCancelRelationship && this.callbacks.onCancelRelationship();
-        });
-
-        // Relationship Form input/select listeners
-        this.elements.relationshipTypeSelect.addEventListener('change', () => {
-            this.callbacks.onRelationshipFormChange && this.callbacks.onRelationshipFormChange();
-        });
-        this.elements.relationshipLabelInput.addEventListener('input', Utils.debounce(() => {
-            this.callbacks.onRelationshipFormChange && this.callbacks.onRelationshipFormChange();
-        }, 300));
-
-
-        // Properties pane input listeners
-        this.elements.propName.addEventListener('input', Utils.debounce((e) => {
-            if (this.currentSelectedPlantUMLId) {
-                this.callbacks.onPropertyChange && this.callbacks.onPropertyChange(
-                    this.currentSelectedPlantUMLId, e.target.dataset.property, e.target.value
-                );
-            }
-        }, 500));
-
-        this.elements.propBgColor.addEventListener('input', Utils.debounce((e) => {
-            if (this.currentSelectedPlantUMLId) {
-                this.callbacks.onPropertyChange && this.callbacks.onPropertyChange(
-                    this.currentSelectedPlantUMLId, e.target.dataset.property, e.target.value
-                );
-            }
-        }, 500));
-
-        this.elements.propLineColor.addEventListener('input', Utils.debounce((e) => {
-            if (this.currentSelectedPlantUMLId) {
-                this.callbacks.onPropertyChange && this.callbacks.onPropertyChange(
-                    this.currentSelectedPlantUMLId, e.target.dataset.property, e.target.value
-                );
-            }
-        }, 500));
-
-        // NEW: Click on empty SVG space to deselect
-        this.elements.svgContainer.addEventListener('click', (e) => {
-            // Check if the click target is the svg element itself or directly within it,
-            // and not an interactive 'g' element that represents a PlantUML component or link.
-            const clickedInteractiveElement = e.target.closest("g.entity, g:has(title), g.link");
-            if (!clickedInteractiveElement) {
-                // Clicked on empty space within SVG container or on the SVG itself
-                this.callbacks.onClearSelectionRequest && this.callbacks.onClearSelectionRequest();
-            }
-        });
-
-        // NEW: Escape key to deselect
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                this.callbacks.onClearSelectionRequest && this.callbacks.onClearSelectionRequest();
-            }
-        });
-      },
-
-      renderComponentButtons: function(diagramType) {
-          this.elements.diagramComponentButtons.innerHTML = '';
-          const components = this.diagramComponentData[diagramType];
-
-          if (components) {
-              components.forEach(comp => {
-                  const button = document.createElement('button');
-                  button.setAttribute('data-action', 'insert-directive');
-                  button.setAttribute('data-type', comp.type);
-                  button.innerHTML = `<i class="${comp.icon}"></i> <span>${comp.label}</span>`;
-                  this.elements.diagramComponentButtons.appendChild(button);
-              });
+        this.svgContainer.addEventListener('click', (e) => {
+          const clickedInteractiveElement = e.target.closest("g.entity, g:has(title), g.link");
+          if (!clickedInteractiveElement) {
+            this.onClearSelectionRequest && this.onClearSelectionRequest();
           }
-      },
+        });
+      }
 
-      setSvgContent: function(svgHtml) {
-        this.elements.svgContainer.innerHTML = svgHtml;
-      },
+      setSvgContent(svgHtml) {
+        this.svgContainer.innerHTML = svgHtml;
+      }
 
-      clearSvgContainer: function() {
-        this.elements.svgContainer.innerHTML = '';
-      },
+      clearSvgContainer() {
+        this.svgContainer.innerHTML = '';
+      }
 
-      displayError: function(message, url = '') {
+      displayError(message, url = '') {
         const errorHtml = `<p style='color:red;'>Error: ${message}</p>`;
         if (url) {
-          this.elements.svgContainer.innerHTML = errorHtml + `<p style='color:red;'>URL: <a href="${url}" target="_blank">Inspect problematic URL</a></p>`;
+          this.svgContainer.innerHTML = errorHtml + `<p style='color:red;'>URL: <a href="${url}" target="_blank">Inspect problematic URL</a></p>`;
         } else {
-          this.elements.svgContainer.innerHTML = errorHtml;
+          this.svgContainer.innerHTML = errorHtml;
         }
-      },
+      }
 
-      setupSvgInteractivity: function() {
-        const svg = this.elements.svgContainer.querySelector("svg");
+      setupSvgInteractivity() {
+        const svg = this.svgContainer.querySelector("svg");
         if (!svg) {
-          console.error("UIManager: SVG element not found. Cannot set up interactivity.");
+          console.error("PreviewPanel: SVG element not found. Cannot set up interactivity.");
           return;
         }
 
-        // Clear existing highlights from previous renders if any
         svg.querySelectorAll(".hover-highlight").forEach(el => el.classList.remove("hover-highlight"));
         svg.querySelectorAll(".selected-element").forEach(el => el.classList.remove("selected-element"));
 
-        const interactiveElements = svg.querySelectorAll("g.entity, g:has(title), g.link"); // Added g.link for relationships
+        const interactiveElements = svg.querySelectorAll("g.entity, g:has(title), g.link");
 
         interactiveElements.forEach(targetGroup => {
           const plantUMLId = Utils.getPlantUMLIdFromSvgElement(targetGroup);
@@ -1138,23 +1107,21 @@ R .. J : "asdf"
           let actualTextLabel = '';
           const textElements = targetGroup.querySelectorAll("text");
           if (textElements.length > 0) {
-              actualTextLabel = Array.from(textElements).map(el => el.textContent.trim()).filter(Boolean).join(' ');
+            actualTextLabel = Array.from(textElements).map(el => el.textContent.trim()).filter(Boolean).join(' ');
           }
 
-          // Elements selectable for relationships or properties are those with a valid PlantUML ID and not relations
           const isSelectableForRelationship = (plantUMLId !== null && !targetGroup.classList.contains('link') && !svgTitleFromElement.startsWith('rel-'));
 
           let tooltipContent;
           if (targetGroup.classList.contains("link") || svgTitleFromElement.startsWith("rel-")) {
-            // For relationships, try to get info from data attributes or title
             const sourceEntity = targetGroup.getAttribute("data-entity-1") || "Unknown";
             const targetEntity = targetGroup.getAttribute("data-entity-2") || "Unknown";
             const relLabel = actualTextLabel || "";
 
             if (relLabel) {
-                tooltipContent = `Relationship: ${sourceEntity} -- ${targetEntity} ("${relLabel}")`;
+              tooltipContent = `Relationship: ${sourceEntity} -- ${targetEntity} ("${relLabel}")`;
             } else {
-                tooltipContent = `Relationship: ${sourceEntity} -- ${targetEntity}`;
+              tooltipContent = `Relationship: ${sourceEntity} -- ${targetEntity}`;
             }
           } else if (plantUMLId) {
             if (actualTextLabel && actualTextLabel !== plantUMLId) {
@@ -1172,8 +1139,7 @@ R .. J : "asdf"
             targetGroup.style.cursor = "pointer";
             targetGroup.addEventListener("click", (e) => {
               e.stopPropagation();
-              this.callbacks.onSvgElementClick &&
-                this.callbacks.onSvgElementClick(plantUMLId, targetGroup);
+              this.onSvgElementClick && this.onSvgElementClick(plantUMLId, targetGroup);
             });
           } else {
             targetGroup.style.cursor = "default";
@@ -1183,181 +1149,50 @@ R .. J : "asdf"
           targetGroup.addEventListener("mousemove", (e) => this._handleMouseMove(e.currentTarget, e.pageX, e.pageY));
           targetGroup.addEventListener("mouseleave", (e) => this._handleMouseLeave(e.currentTarget));
         });
-      },
+      }
 
-      _handleMouseEnter: function(element, x, y) {
-        const svg = this.elements.svgContainer.querySelector("svg");
+      _handleMouseEnter(element, x, y) {
+        const svg = this.svgContainer.querySelector("svg");
         if (svg) {
-            svg.querySelectorAll(".hover-highlight").forEach(el => {
+          svg.querySelectorAll(".hover-highlight").forEach(el => {
             if (el !== element) {
-                el.classList.remove("hover-highlight");
+              el.classList.remove("hover-highlight");
             }
-            });
+          });
         }
         if (!element.classList.contains("selected-element")) {
           element.classList.add("hover-highlight");
         }
         this.showTooltip(element.getAttribute("data-tooltip-content"), x, y);
-      },
+      }
 
-      _handleMouseMove: function(element, x, y) {
+      _handleMouseMove(element, x, y) {
         this.showTooltip(element.getAttribute("data-tooltip-content"), x, y);
-      },
+      }
 
-      _handleMouseLeave: function(element) {
+      _handleMouseLeave(element) {
         if (!element.classList.contains("selected-element")) {
           element.classList.remove("hover-highlight");
         }
         this.hideTooltip();
-      },
+      }
 
-      showTooltip: function(text, x, y) {
-        this.elements.tooltip.style.left = x + 10 + "px";
-        this.elements.tooltip.style.top = y + 10 + "px";
-        this.elements.tooltip.textContent = text;
-        this.elements.tooltip.style.opacity = 1;
-      },
+      showTooltip(text, x, y) {
+        this.tooltip.style.left = x + 10 + "px";
+        this.tooltip.style.top = y + 10 + "px";
+        this.tooltip.textContent = text;
+        this.tooltip.style.opacity = 1;
+      }
 
-      hideTooltip: function() {
-        this.elements.tooltip.style.opacity = 0;
-      },
+      hideTooltip() {
+        this.tooltip.style.opacity = 0;
+      }
 
-      updateRelationshipForm: function(selectedIds) {
-        // We're no longer displaying the selected IDs text or selection message directly in the form
-        // this.elements.selectedElementsSpan.textContent = selectedIds.length > 0 ? selectedIds.join(', ') : 'None';
-        // this.elements.selectionMessage.textContent = `Selected ${selectedIds[0]} and ${selectedIds[1]}. Choose relationship and label.`;
-
-
-        if (selectedIds.length === 2) {
-            this.elements.relationshipFormContainer.style.display = 'flex'; // Use flex for column layout
-            this.positionRelationshipForm(); // Position when shown
-            this.elements.relationshipTypeSelect.disabled = false;
-            this.elements.relationshipLabelInput.disabled = false;
-            this.elements.addRelationshipBtn.disabled = false;
-            this.elements.relationshipLabelInput.focus();
-            // The callback `onRelationshipFormChange` is now triggered by PlantUMLApp after setting currentPreviewSource/TargetId
-            // this.callbacks.onRelationshipFormChange && this.callbacks.onRelationshipFormChange(); // Trigger initial preview
-        } else {
-            this.elements.relationshipFormContainer.style.display = 'none';
-            // Selection message is now hidden via CSS. If we needed dynamic text, we'd manage visibility here.
-            this.elements.relationshipTypeSelect.disabled = true;
-            this.elements.relationshipLabelInput.disabled = true;
-            this.elements.addRelationshipBtn.disabled = true;
-            this.clearRelationshipPreview(); // Clear preview when form is hidden
-        }
-      },
-
-      positionRelationshipForm: function() {
-          // It's fixed, so no need for complex calculations, CSS handles it.
-          // This function now primarily ensures visibility.
-      },
-
-      resetRelationshipForm: function() {
-        this.elements.relationshipLabelInput.value = '';
-        this.elements.relationshipTypeSelect.value = '-->';
-      },
-
-      getRelationshipFormValues: function() {
-        return {
-          type: this.elements.relationshipTypeSelect.value,
-          label: this.elements.relationshipLabelInput.value.trim()
-        };
-      },
-
-      // New function to render the relationship preview
-      renderRelationshipPreview: async function(sourceId, targetId, type, label, fullSource) {
-          const previewContainer = this.elements.relationshipPreviewContainer;
-          if (!sourceId || !targetId) {
-              previewContainer.innerHTML = '<p style="color: #7f8c8d; font-style: italic; font-size: var(--font-size-small);">Preview will appear here</p>';
-              return;
-          }
-
-          let tempPlantUml = "@startuml\n";
-
-          // Try to get the full declaration lines from the main source
-          let sourceDeclaration = Utils.extractDeclarationForPreview(sourceId, fullSource);
-          let targetDeclaration = Utils.extractDeclarationForPreview(targetId, fullSource);
-
-          // Fallback if specific declarations aren't found or for special keywords
-          const generateGenericDeclaration = (id) => {
-            const lowerId = id.toLowerCase();
-            if (lowerId === 'start') return 'start';
-            if (lowerId === 'stop') return 'stop';
-            if (lowerId === 'detach') return 'detach';
-            if (lowerId === 'kill') return 'kill';
-
-            // Heuristic to guess if it's a quoted name or needs quoting
-            const displayName = id.includes(' ') ? id : id.split(/(?=[A-Z])/).join(' ');
-            const quotedDisplayName = `"${displayName}"`;
-
-            // A more robust fallback could try to guess type from current diagramType or common types
-            // For now, default to `class` if it's not a special keyword.
-            return `class ${quotedDisplayName} as ${id}`;
-          };
-
-          if (!sourceDeclaration) {
-              sourceDeclaration = generateGenericDeclaration(sourceId);
-          }
-          if (!targetDeclaration) {
-              targetDeclaration = generateGenericDeclaration(targetId);
-          }
-
-          tempPlantUml += `${sourceDeclaration}\n`;
-          tempPlantUml += `${targetDeclaration}\n`;
-
-          tempPlantUml += `${sourceId} ${type} ${targetId}`;
-          if (label) {
-              tempPlantUml += ` : "${label}"`;
-          }
-          tempPlantUml += "\n@enduml";
-
-          console.log("PlantUML Preview Source:\n", tempPlantUml); // Debugging: Log the generated PlantUML for the preview
-
-
-          // Use the DiagramRenderer but target the specific preview container
-          const encoded = plantumlEncoder.encode(tempPlantUml);
-          const url = `${DiagramRenderer.PLANTUML_API_BASE_URL}${encoded}`;
-
-          try {
-              const res = await fetch(url);
-              if (!res.ok) {
-                  const errorResponseText = await res.text();
-                  const errorMatch = errorResponseText.match(/<text.*?fill="#FF0000".*?>(.*?)<\/text>/);
-                  let errorMessage = `HTTP error! Status: ${res.status} (${res.statusText || 'Unknown'})`;
-                  if (errorMatch && errorMatch[1]) {
-                      errorMessage += ` - PlantUML Syntax: ${errorMatch[1].replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec))}`;
-                  } else {
-                      errorMessage += ` - Server response: ${errorResponseText.substring(0, 200)}...`;
-                  }
-                  throw new Error(errorMessage);
-              }
-              const svgText = await res.text();
-              if (!svgText.includes("<svg")) {
-                  throw new Error("Received non-SVG content from PlantUML server.");
-              }
-              previewContainer.innerHTML = svgText.replace(/<\?xml.*\?>\n/, '');
-              // Optional: Adjust SVG size to fit the container better
-              const svg = previewContainer.querySelector('svg');
-              if (svg) {
-                  svg.style.maxWidth = '100%';
-                  svg.style.height = 'auto'; // Ensure it fits vertically too (up to container max-height)
-              }
-          } catch (error) {
-              previewContainer.innerHTML = `<p style='color:red; font-size: var(--font-size-small);'>Preview Error: ${error.message}</p><p style='font-size: var(--font-size-small); color: #7f8c8d;'>Generated PlantUML for preview (check console): <pre>${tempPlantUml.split('\n').map(line => line.trim()).filter(Boolean).join('\n')}</pre></p>`;
-              console.error("Failed to render relationship preview:", error);
-          }
-      },
-
-      clearRelationshipPreview: function() {
-          this.elements.relationshipPreviewContainer.innerHTML = '<p style="color: #7f8c8d; font-style: italic; font-size: var(--font-size-small);">Preview will appear here</p>';
-      },
-
-      applySelectionHighlight: function(element, isSelected) {
+      applySelectionHighlight(element, isSelected) {
         if (isSelected) {
           element.classList.remove("hover-highlight");
           element.classList.add("selected-element");
         } else {
-          // FIX: Corrected the class name from "selected-highlight" to "selected-element"
           element.classList.remove("selected-element");
           if (element.matches(':hover')) {
             element.classList.add("hover-highlight");
@@ -1365,49 +1200,228 @@ R .. J : "asdf"
             element.classList.remove("hover-highlight");
           }
         }
-      },
+      }
+    }
 
-      getPlantUmlSource: function() {
-        return this.elements.plantUmlSource.value;
-      },
+    // Properties Pane Component Class
+    class PropertiesPane {
+      constructor(element) {
+        this.element = element;
+        this.propertiesInfo = element.querySelector('#properties-info');
+        this.propertiesForm = element.querySelector('#properties-form');
+        this.propName = element.querySelector('#prop-name');
+        this.propBgColor = element.querySelector('#prop-bgcolor');
+        this.propLineColor = element.querySelector('#prop-linecolor');
+        
+        this.currentSelectedPlantUMLId = null;
+        this.onPropertyChange = null;
 
-      setPlantUmlSource: function(source) {
-        this.elements.plantUmlSource.value = source;
-      },
+        this._setupEventListeners();
+      }
 
-      // Properties Pane functions (always visible)
-      currentSelectedPlantUMLId: null, // Track the ID of the element whose properties are currently shown
+      init(callbacks) {
+        this.onPropertyChange = callbacks.onPropertyChange;
+        this.reset();
+      }
 
-      updatePropertiesPane: function(plantUMLId, sourceCode) {
-          this.currentSelectedPlantUMLId = plantUMLId; // Update the tracking ID
-          if (!plantUMLId) {
-              this.resetPropertiesPane();
-              return;
+      _setupEventListeners() {
+        this.propName.addEventListener('input', Utils.debounce((e) => {
+          if (this.currentSelectedPlantUMLId) {
+            this.onPropertyChange && this.onPropertyChange(
+              this.currentSelectedPlantUMLId, e.target.dataset.property, e.target.value
+            );
           }
+        }, 500));
 
-          this.elements.propertiesInfo.style.display = 'none';
-          this.elements.propertiesForm.style.display = 'block';
+        this.propBgColor.addEventListener('input', Utils.debounce((e) => {
+          if (this.currentSelectedPlantUMLId) {
+            this.onPropertyChange && this.onPropertyChange(
+              this.currentSelectedPlantUMLId, e.target.dataset.property, e.target.value
+            );
+          }
+        }, 500));
 
-          const properties = Utils.extractPropertiesFromSource(plantUMLId, sourceCode);
+        this.propLineColor.addEventListener('input', Utils.debounce((e) => {
+          if (this.currentSelectedPlantUMLId) {
+            this.onPropertyChange && this.onPropertyChange(
+              this.currentSelectedPlantUMLId, e.target.dataset.property, e.target.value
+            );
+          }
+        }, 500));
+      }
 
-          this.elements.propName.value = properties.name || plantUMLId;
-          this.elements.propBgColor.value = properties.bgcolor || '#ffffff'; // Default to white if none
-          this.elements.propLineColor.value = properties.linecolor || '#000000'; // Default to black if none
+      updateProperties(plantUMLId, sourceCode) {
+        this.currentSelectedPlantUMLId = plantUMLId;
+        if (!plantUMLId) {
+          this.reset();
+          return;
+        }
 
-          // Future: Populate other fields based on `properties` object
-      },
+        this.propertiesInfo.style.display = 'none';
+        this.propertiesForm.style.display = 'block';
 
-      resetPropertiesPane: function() {
-          this.currentSelectedPlantUMLId = null; // Clear the tracking ID
-          this.elements.propName.value = '';
-          this.elements.propBgColor.value = '#ffffff';
-          this.elements.propLineColor.value = '#000000';
-          this.elements.propertiesInfo.style.display = 'block';
-          this.elements.propertiesForm.style.display = 'none';
-      },
-    };
+        const properties = Utils.extractPropertiesFromSource(plantUMLId, sourceCode);
 
-    // --- 3. SELECTION MANAGER MODULE ---
+        this.propName.value = properties.name || plantUMLId;
+        this.propBgColor.value = properties.bgcolor || '#ffffff';
+        this.propLineColor.value = properties.linecolor || '#000000';
+      }
+
+      reset() {
+        this.currentSelectedPlantUMLId = null;
+        this.propName.value = '';
+        this.propBgColor.value = '#ffffff';
+        this.propLineColor.value = '#000000';
+        this.propertiesInfo.style.display = 'block';
+        this.propertiesForm.style.display = 'none';
+      }
+    }
+
+    // Relationship Form Component Class
+    class RelationshipForm {
+      constructor(element) {
+        this.element = element;
+        this.relationshipTypeSelect = element.querySelector('#relationship-type');
+        this.relationshipLabelInput = element.querySelector('#relationship-label');
+        this.addRelationshipBtn = element.querySelector('#add-relationship-btn');
+        this.cancelRelationshipBtn = element.querySelector('#cancel-relationship-btn');
+        this.relationshipPreviewContainer = element.querySelector('#relationship-preview-container');
+        
+        this.onAddRelationship = null;
+        this.onCancelRelationship = null;
+        this.onRelationshipFormChange = null;
+
+        this._setupEventListeners();
+      }
+
+      init(callbacks) {
+        this.onAddRelationship = callbacks.onAddRelationship;
+        this.onCancelRelationship = callbacks.onCancelRelationship;
+        this.onRelationshipFormChange = callbacks.onRelationshipFormChange;
+      }
+
+      _setupEventListeners() {
+        this.addRelationshipBtn.addEventListener('click', () => {
+          this.onAddRelationship && this.onAddRelationship();
+        });
+
+        this.cancelRelationshipBtn.addEventListener('click', () => {
+          this.onCancelRelationship && this.onCancelRelationship();
+        });
+
+        this.relationshipTypeSelect.addEventListener('change', () => {
+          this.onRelationshipFormChange && this.onRelationshipFormChange();
+        });
+
+        this.relationshipLabelInput.addEventListener('input', Utils.debounce(() => {
+          this.onRelationshipFormChange && this.onRelationshipFormChange();
+        }, 300));
+      }
+
+      updateForm(selectedIds) {
+        if (selectedIds.length === 2) {
+          this.element.style.display = 'flex';
+          this.relationshipTypeSelect.disabled = false;
+          this.relationshipLabelInput.disabled = false;
+          this.addRelationshipBtn.disabled = false;
+          this.relationshipLabelInput.focus();
+        } else {
+          this.element.style.display = 'none';
+          this.relationshipTypeSelect.disabled = true;
+          this.relationshipLabelInput.disabled = true;
+          this.addRelationshipBtn.disabled = true;
+          this.clearPreview();
+        }
+      }
+
+      reset() {
+        this.relationshipLabelInput.value = '';
+        this.relationshipTypeSelect.value = '-->';
+      }
+
+      getFormValues() {
+        return {
+          type: this.relationshipTypeSelect.value,
+          label: this.relationshipLabelInput.value.trim()
+        };
+      }
+
+      async renderPreview(sourceId, targetId, type, label, fullSource) {
+        if (!sourceId || !targetId) {
+          this.relationshipPreviewContainer.innerHTML = '<p style="color: #7f8c8d; font-style: italic; font-size: var(--font-size-small);">Preview will appear here</p>';
+          return;
+        }
+
+        let tempPlantUml = "@startuml\n";
+
+        let sourceDeclaration = Utils.extractDeclarationForPreview(sourceId, fullSource);
+        let targetDeclaration = Utils.extractDeclarationForPreview(targetId, fullSource);
+
+        const generateGenericDeclaration = (id) => {
+          const lowerId = id.toLowerCase();
+          if (lowerId === 'start') return 'start';
+          if (lowerId === 'stop') return 'stop';
+          if (lowerId === 'detach') return 'detach';
+          if (lowerId === 'kill') return 'kill';
+
+          const displayName = id.includes(' ') ? id : id.split(/(?=[A-Z])/).join(' ');
+          const quotedDisplayName = `"${displayName}"`;
+          return `class ${quotedDisplayName} as ${id}`;
+        };
+
+        if (!sourceDeclaration) {
+          sourceDeclaration = generateGenericDeclaration(sourceId);
+        }
+        if (!targetDeclaration) {
+          targetDeclaration = generateGenericDeclaration(targetId);
+        }
+
+        tempPlantUml += `${sourceDeclaration}\n`;
+        tempPlantUml += `${targetDeclaration}\n`;
+        tempPlantUml += `${sourceId} ${type} ${targetId}`;
+        if (label) {
+          tempPlantUml += ` : "${label}"`;
+        }
+        tempPlantUml += "\n@enduml";
+
+        const encoded = plantumlEncoder.encode(tempPlantUml);
+        const url = `https://www.plantuml.com/plantuml/svg/${encoded}`;
+
+        try {
+          const res = await fetch(url);
+          if (!res.ok) {
+            const errorResponseText = await res.text();
+            const errorMatch = errorResponseText.match(/<text.*?fill="#FF0000".*?>(.*?)<\/text>/);
+            let errorMessage = `HTTP error! Status: ${res.status} (${res.statusText || 'Unknown'})`;
+            if (errorMatch && errorMatch[1]) {
+              errorMessage += ` - PlantUML Syntax: ${errorMatch[1].replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec))}`;
+            } else {
+              errorMessage += ` - Server response: ${errorResponseText.substring(0, 200)}...`;
+            }
+            throw new Error(errorMessage);
+          }
+          const svgText = await res.text();
+          if (!svgText.includes("<svg")) {
+            throw new Error("Received non-SVG content from PlantUML server.");
+          }
+          this.relationshipPreviewContainer.innerHTML = svgText.replace(/<\?xml.*\?>\n/, '');
+          const svg = this.relationshipPreviewContainer.querySelector('svg');
+          if (svg) {
+            svg.style.maxWidth = '100%';
+            svg.style.height = 'auto';
+          }
+        } catch (error) {
+          this.relationshipPreviewContainer.innerHTML = `<p style='color:red; font-size: var(--font-size-small);'>Preview Error: ${error.message}</p>`;
+          console.error("Failed to render relationship preview:", error);
+        }
+      }
+
+      clearPreview() {
+        this.relationshipPreviewContainer.innerHTML = '<p style="color: #7f8c8d; font-style: italic; font-size: var(--font-size-small);">Preview will appear here</p>';
+      }
+    }
+
+    // --- 4. SELECTION MANAGER MODULE ---
     const SelectionManager = {
       selectedPlantUMLIds: [],
       selectedSVGElementRefs: [],
@@ -1424,20 +1438,15 @@ R .. J : "asdf"
         const index = this.selectedPlantUMLIds.indexOf(plantUMLId);
 
         if (index > -1) {
-          // If already selected, deselect it
           this._deselect(plantUMLId, svgElement);
         } else {
-          // If not selected
           if (this.selectedPlantUMLIds.length === 2) {
-            // If already two selected, clear all and select only the new one
-            this.clearSelection(); // This will unhighlight the previous two
+            this.clearSelection();
             this._select(plantUMLId, svgElement);
           } else {
-            // Otherwise, just add it
             this._select(plantUMLId, svgElement);
           }
         }
-        // Always call the callback after selection changes for UI updates
         this.onSelectionChangeCallback && this.onSelectionChangeCallback(this.selectedPlantUMLIds);
       },
 
@@ -1450,9 +1459,9 @@ R .. J : "asdf"
       _deselect: function(plantUMLId, svgElement) {
         const index = this.selectedPlantUMLIds.indexOf(plantUMLId);
         if (index > -1) {
-            this.selectedPlantUMLIds.splice(index, 1);
-            this.selectedSVGElementRefs.splice(index, 1); // Assuming same index
-            this.onElementHighlightChange && this.onElementHighlightChange(svgElement, false);
+          this.selectedPlantUMLIds.splice(index, 1);
+          this.selectedSVGElementRefs.splice(index, 1);
+          this.onElementHighlightChange && this.onElementHighlightChange(svgElement, false);
         }
       },
 
@@ -1463,7 +1472,6 @@ R .. J : "asdf"
         this.selectedPlantUMLIds = [];
         this.selectedSVGElementRefs = [];
         this.onSelectionChangeCallback && this.onSelectionChangeCallback(this.selectedPlantUMLIds);
-        console.log("SelectionManager: Selection cleared."); // Added for debugging
       },
 
       reapplySelectionHighlights: function(svgContainerElement) {
@@ -1475,7 +1483,6 @@ R .. J : "asdf"
             this.onElementHighlightChange && this.onElementHighlightChange(element, true);
             return true;
           }
-          // console.log(`SelectionManager: Previously selected element (ID: ${id}) not found after re-render.`);
           return false;
         });
         this.selectedSVGElementRefs = newSelectedSVGElementRefs;
@@ -1487,14 +1494,12 @@ R .. J : "asdf"
       },
     };
 
-    // --- 4. DIAGRAM RENDERER MODULE ---
+    // --- 5. DIAGRAM RENDERER MODULE ---
     const DiagramRenderer = {
       PLANTUML_API_BASE_URL: "https://www.plantuml.com/plantuml/svg/",
-      svgContainer: null,
       errorDisplayCallback: null,
 
-      init: function(svgContainerElement, errorCallback) {
-        this.svgContainer = svgContainerElement;
+      init: function(errorCallback) {
         this.errorDisplayCallback = errorCallback;
       },
 
@@ -1518,7 +1523,6 @@ R .. J : "asdf"
         }
 
         const url = `${this.PLANTUML_API_BASE_URL}${encoded}`;
-        // console.log("DiagramRenderer: Attempting to fetch SVG. URL:", url);
 
         try {
           const res = await fetch(url);
@@ -1528,9 +1532,9 @@ R .. J : "asdf"
             const errorMatch = errorText.match(/<text.*?fill="#FF0000".*?>(.*?)<\/text>/);
             let userFriendlyError = `HTTP error! Status: ${res.status} (${res.statusText || 'Unknown'})`;
             if (errorMatch && errorMatch[1]) {
-                userFriendlyError += ` - PlantUML Syntax: ${errorMatch[1].replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec))}`;
+              userFriendlyError += ` - PlantUML Syntax: ${errorMatch[1].replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec))}`;
             } else {
-                userFriendlyError += ` - Server response: ${errorText.substring(0, 200)}...`;
+              userFriendlyError += ` - Server response: ${errorText.substring(0, 200)}...`;
             }
             this.errorDisplayCallback(userFriendlyError, url);
             return null;
@@ -1542,16 +1546,14 @@ R .. J : "asdf"
             const errorMatch = svgText.match(/<text.*?fill="#FF0000".*?>(.*?)<\/text>/);
             let userFriendlyError = "Received non-SVG content from PlantUML server.";
             if (errorMatch && errorMatch[1]) {
-                userFriendlyError = `PlantUML Syntax Error: ${errorMatch[1].replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec))}`;
+              userFriendlyError = `PlantUML Syntax Error: ${errorMatch[1].replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec))}`;
             }
             this.errorDisplayCallback(userFriendlyError, url);
             return null;
           }
 
           svgText = svgText.replace(/<\?xml.*\?>\n/, '');
-          this.svgContainer.innerHTML = svgText;
-          // console.log("DiagramRenderer: SVG rendered successfully.");
-          return this.svgContainer.querySelector('svg');
+          return svgText;
         } catch (err) {
           this.errorDisplayCallback(`Network or unknown error: ${err.message}`, url);
           return null;
@@ -1559,286 +1561,287 @@ R .. J : "asdf"
       }
     };
 
-    // --- 5. MAIN APPLICATION CLASS ---
+    // --- 6. MAIN APPLICATION CLASS ---
     class PlantUMLApp {
       constructor() {
-        this.uiManager = UIManager;
+        // Initialize component instances
+        this.sidebar = new Sidebar(document.getElementById('sidebar'));
+        this.editorPanel = new EditorPanel(document.querySelector('.editor-panel'));
+        this.previewPanel = new PreviewPanel(document.querySelectorAll('.editor-panel')[1]);
+        this.propertiesPane = new PropertiesPane(document.getElementById('properties-pane'));
+        this.relationshipForm = new RelationshipForm(document.getElementById('relationship-form-container'));
+        
+        // Initialize other modules
         this.selectionManager = SelectionManager;
         this.diagramRenderer = DiagramRenderer;
 
-        this.currentPreviewSourceId = null; // New state variable for preview
-        this.currentPreviewTargetId = null; // New state variable for preview
+        // State for relationship preview
+        this.currentPreviewSourceId = null;
+        this.currentPreviewTargetId = null;
 
-        this.uiManager.init({
-          onSvgElementClick: this.handleSvgElementClick.bind(this),
-          onRenderRequest: this.render.bind(this),
-          onInsertDirective: this.insertPlantUMLDirective.bind(this),
-          onAddRelationship: this.addRelationship.bind(this),
-          onCancelRelationship: this.cancelRelationship.bind(this),
-          onClearDiagram: this.clearDiagram.bind(this),
-          onPropertyChange: this.handlePropertyChange.bind(this),
-          onRelationshipFormChange: this.handleRelationshipFormChange.bind(this), // New callback
-          onClearSelectionRequest: this.handleClearSelectionRequest.bind(this) // NEW: Pass the handler
+        this._initializeComponents();
+        this._setupGlobalEventListeners();
+        this._setupInitialState();
+      }
+
+      _initializeComponents() {
+        // Initialize sidebar
+        this.sidebar.init({
+          onDiagramTypeChange: () => {
+            // Optionally clear diagram when changing type
+          },
+          onInsertDirective: this.insertPlantUMLDirective.bind(this)
         });
 
+        // Initialize editor panel
+        this.editorPanel.init({
+          onSourceChange: this.render.bind(this),
+          onClearDiagram: this.clearDiagram.bind(this)
+        });
+
+        // Initialize preview panel
+        this.previewPanel.init({
+          onRenderRequest: this.render.bind(this),
+          onSvgElementClick: this.handleSvgElementClick.bind(this),
+          onClearSelectionRequest: this.handleClearSelectionRequest.bind(this)
+        });
+
+        // Initialize properties pane
+        this.propertiesPane.init({
+          onPropertyChange: this.handlePropertyChange.bind(this)
+        });
+
+        // Initialize relationship form
+        this.relationshipForm.init({
+          onAddRelationship: this.addRelationship.bind(this),
+          onCancelRelationship: this.cancelRelationship.bind(this),
+          onRelationshipFormChange: this.handleRelationshipFormChange.bind(this)
+        });
+
+        // Initialize selection manager
         this.selectionManager.init(
-          this.uiManager.updateRelationshipForm.bind(this.uiManager),
-          this.uiManager.applySelectionHighlight.bind(this.uiManager)
+          this.handleSelectionChange.bind(this),
+          this.previewPanel.applySelectionHighlight.bind(this.previewPanel)
         );
 
+        // Initialize diagram renderer
         this.diagramRenderer.init(
-          this.uiManager.elements.svgContainer,
-          this.uiManager.displayError.bind(this.uiManager)
+          this.previewPanel.displayError.bind(this.previewPanel)
         );
+      }
 
-        this._setupInitialState();
+      _setupGlobalEventListeners() {
+        // Global escape key listener
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') {
+            this.handleClearSelectionRequest();
+          }
+        });
       }
 
       _setupInitialState() {
         this.render();
-        this.uiManager.resetPropertiesPane(); // Initialize properties pane with "click an element" message
+        this.propertiesPane.reset();
       }
 
       async render() {
-        const source = this.uiManager.getPlantUmlSource();
-        this.uiManager.clearSvgContainer();
+        const source = this.editorPanel.getSource();
+        this.previewPanel.clearSvgContainer();
 
-        const svgElement = await this.diagramRenderer.render(source);
+        const svgText = await this.diagramRenderer.render(source);
 
-        if (svgElement) {
-          this.uiManager.setupSvgInteractivity();
-          this.selectionManager.reapplySelectionHighlights(this.uiManager.elements.svgContainer);
-          // If there's an active single selection for properties pane, re-populate it
+        if (svgText) {
+          this.previewPanel.setSvgContent(svgText);
+          this.previewPanel.setupSvgInteractivity();
+          this.selectionManager.reapplySelectionHighlights(this.previewPanel.svgContainer);
+          
           const currentSelections = this.selectionManager.getSelections();
           if (currentSelections.length === 1) {
-              this.uiManager.updatePropertiesPane(currentSelections[0], source);
+            this.propertiesPane.updateProperties(currentSelections[0], source);
           } else {
-              this.uiManager.resetPropertiesPane(); // Reset properties pane if nothing was selected (or was cleared, or multiple selected)
+            this.propertiesPane.reset();
           }
         } else {
-            this.selectionManager.clearSelection();
-            this.uiManager.resetPropertiesPane(); // Reset properties pane on error
+          this.selectionManager.clearSelection();
+          this.propertiesPane.reset();
         }
       }
 
       handleSvgElementClick(plantUMLId, svgElement) {
         this.selectionManager.toggleSelection(plantUMLId, svgElement);
+      }
 
-        const updatedSelections = this.selectionManager.getSelections();
-
-        if (updatedSelections.length === 1) {
-            // One item selected, show properties pane for it
-            this.uiManager.updatePropertiesPane(updatedSelections[0], this.uiManager.getPlantUmlSource());
-            this.uiManager.elements.relationshipFormContainer.style.display = 'none'; // Hide relationship form
-            this.uiManager.clearRelationshipPreview(); // Clear preview if it was shown
-            this.currentPreviewSourceId = null;
-            this.currentPreviewTargetId = null;
-        } else if (updatedSelections.length === 2) {
-            // Two items selected, update relationship form (it will now appear)
-            this.currentPreviewSourceId = updatedSelections[0];
-            this.currentPreviewTargetId = updatedSelections[1];
-            // Keep properties of the *first* selected element (or simply don't update properties pane now)
-            this.uiManager.updatePropertiesPane(updatedSelections[0], this.uiManager.getPlantUmlSource());
-            // Trigger initial preview render NOW that both IDs are set
-            this.handleRelationshipFormChange(); // This will call UIManager.renderRelationshipPreview
-        } else { // 0 selections after toggle (e.g., deselected the last item, or clicked a 3rd item)
-            this.uiManager.resetPropertiesPane(); // Reset properties pane
-            this.uiManager.elements.relationshipFormContainer.style.display = 'none'; // Hide relationship form
-            this.uiManager.clearRelationshipPreview(); // Clear preview
-            this.currentPreviewSourceId = null;
-            this.currentPreviewTargetId = null;
+      handleSelectionChange(selectedIds) {
+        if (selectedIds.length === 1) {
+          this.propertiesPane.updateProperties(selectedIds[0], this.editorPanel.getSource());
+          this.relationshipForm.updateForm(selectedIds);
+          this.relationshipForm.clearPreview();
+          this.currentPreviewSourceId = null;
+          this.currentPreviewTargetId = null;
+        } else if (selectedIds.length === 2) {
+          this.currentPreviewSourceId = selectedIds[0];
+          this.currentPreviewTargetId = selectedIds[1];
+          this.propertiesPane.updateProperties(selectedIds[0], this.editorPanel.getSource());
+          this.relationshipForm.updateForm(selectedIds);
+          this.handleRelationshipFormChange();
+        } else {
+          this.propertiesPane.reset();
+          this.relationshipForm.updateForm(selectedIds);
+          this.relationshipForm.clearPreview();
+          this.currentPreviewSourceId = null;
+          this.currentPreviewTargetId = null;
         }
       }
 
-      // NEW: Central handler for any request to clear selection
       handleClearSelectionRequest() {
-          this.selectionManager.clearSelection();
-          this.uiManager.resetPropertiesPane();
-          this.uiManager.elements.relationshipFormContainer.style.display = 'none';
-          this.uiManager.clearRelationshipPreview();
-          this.currentPreviewSourceId = null;
-          this.currentPreviewTargetId = null;
+        this.selectionManager.clearSelection();
+        this.propertiesPane.reset();
+        this.relationshipForm.updateForm([]);
+        this.relationshipForm.clearPreview();
+        this.currentPreviewSourceId = null;
+        this.currentPreviewTargetId = null;
       }
 
-
       insertPlantUMLDirective(type) {
-        this.handleClearSelectionRequest(); // Clear selection when adding new element
+        this.handleClearSelectionRequest();
 
-        const currentSource = this.uiManager.getPlantUmlSource();
+        const currentSource = this.editorPanel.getSource();
         const existingNames = this._extractExistingPlantUMLNames(currentSource);
         const randomName = Utils.generateRandomLetter(existingNames);
 
         let directive;
         switch (type) {
-            // General Elements
-            case 'class':
-            case 'interface':
-            case 'abstract class':
-            case 'enum':
-            case 'annotation':
-            case 'component':
-            case 'node':
-            case 'database':
-            case 'cloud':
-            case 'agent':
-            case 'artifact':
-            case 'actor':
-            case 'usecase':
-            case 'boundary':
-            case 'control':
-            case 'entity':
-            case 'collections':
-            case 'queue':
-                directive = `${type} "New ${type.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} ${randomName}" as ${randomName}\n`;
-                break;
-
-            // State Diagram specific elements
-            case 'state':
-                directive = `state "New State ${randomName}" as ${randomName}\n`;
-                break;
-            case 'start_state':
-                directive = `state "Initial State" as Initial${randomName} <<start>>\n`;
-                break;
-            case 'final_state':
-                directive = `state "Final State" as Final${randomName} <<end>>\n`;
-                break;
-            case 'choice_state':
-                directive = `state "Choice" as Choice${randomName} <<choice>>\n`;
-                break;
-            case 'junction_state':
-                directive = `state "Junction" as Junction${randomName} <<junction>>\n`;
-                break;
-            case 'terminate_state':
-                directive = `state "Terminate" as Terminate${randomName} <<terminate>>\n`;
-                break;
-            case 'history_state':
-                directive = `state "History" as History${randomName} <<history>>\n`;
-                break;
-
-            // Activity Diagram specific elements
-            case 'start_activity':
-                directive = `start\n`;
-                break;
-            case 'stop_activity':
-                directive = `stop\n`;
-                break;
-            case 'activity_action':
-                // Using (Label) as Alias syntax for activities to make them clearly linkable.
-                directive = `(New Activity ${randomName}) as ${randomName}\n`;
-                break;
-            case 'decision_activity':
-                // A standalone diamond for a decision point
-                directive = `diamond "Condition ${randomName}?" as ${randomName}\n`;
-                break;
-            case 'fork_activity':
-                directive = `fork Fork${randomName}\nend fork\n`; // Creates a named fork block
-                break;
-            case 'join_activity':
-                directive = `join Join${randomName}\n`; // Creates a named join
-                break;
-            case 'partition_activity':
-                directive = `partition "New Partition ${randomName}" {\n  ' -- Add elements inside --\n}\n`; // Creates a named partition block
-                break;
-            case 'detach_activity':
-                directive = `detach\n`;
-                break;
-            case 'kill_activity':
-                directive = `kill\n`;
-                break;
-            case 'note':
-                directive = `note "New Note ${randomName}" as ${randomName}\n`;
-                break;
-
-            // C4 Model specific elements (these are macros, so they don't use 'as Alias' directly)
-            // Assumes !includeurl for C4-PlantUML is present in the source.
-            case 'Person':
-            case 'Person_Ext':
-            case 'System':
-            case 'System_Ext':
-            case 'Container':
-            case 'ContainerDb':
-            case 'Component':
-                directive = `${type}(${randomName}, "New ${type} ${randomName}", "Description for ${type}")\n`;
-                break;
-            default:
-                console.warn(`Unhandled type for directive: ${type}. Using generic approach.`);
-                directive = `${type} "New ${type} ${randomName}" as ${randomName}\n`;
-                break;
+          case 'class':
+          case 'interface':
+          case 'abstract class':
+          case 'enum':
+          case 'annotation':
+          case 'component':
+          case 'node':
+          case 'database':
+          case 'cloud':
+          case 'agent':
+          case 'artifact':
+          case 'actor':
+          case 'usecase':
+          case 'boundary':
+          case 'control':
+          case 'entity':
+          case 'collections':
+          case 'queue':
+            directive = `${type} "New ${type.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} ${randomName}" as ${randomName}\n`;
+            break;
+          case 'state':
+            directive = `state "New State ${randomName}" as ${randomName}\n`;
+            break;
+          case 'start_state':
+            directive = `state "Initial State" as Initial${randomName} <<start>>\n`;
+            break;
+          case 'final_state':
+            directive = `state "Final State" as Final${randomName} <<end>>\n`;
+            break;
+          case 'choice_state':
+            directive = `state "Choice" as Choice${randomName} <<choice>>\n`;
+            break;
+          case 'junction_state':
+            directive = `state "Junction" as Junction${randomName} <<junction>>\n`;
+            break;
+          case 'terminate_state':
+            directive = `state "Terminate" as Terminate${randomName} <<terminate>>\n`;
+            break;
+          case 'history_state':
+            directive = `state "History" as History${randomName} <<history>>\n`;
+            break;
+          case 'start_activity':
+            directive = `start\n`;
+            break;
+          case 'stop_activity':
+            directive = `stop\n`;
+            break;
+          case 'activity_action':
+            directive = `(New Activity ${randomName}) as ${randomName}\n`;
+            break;
+          case 'decision_activity':
+            directive = `diamond "Condition ${randomName}?" as ${randomName}\n`;
+            break;
+          case 'fork_activity':
+            directive = `fork Fork${randomName}\nend fork\n`;
+            break;
+          case 'join_activity':
+            directive = `join Join${randomName}\n`;
+            break;
+          case 'partition_activity':
+            directive = `partition "New Partition ${randomName}" {\n  ' -- Add elements inside --\n}\n`;
+            break;
+          case 'detach_activity':
+            directive = `detach\n`;
+            break;
+          case 'kill_activity':
+            directive = `kill\n`;
+            break;
+          case 'note':
+            directive = `note "New Note ${randomName}" as ${randomName}\n`;
+            break;
+          case 'Person':
+          case 'Person_Ext':
+          case 'System':
+          case 'System_Ext':
+          case 'Container':
+          case 'ContainerDb':
+          case 'Component':
+            directive = `${type}(${randomName}, "New ${type} ${randomName}", "Description for ${type}")\n`;
+            break;
+          default:
+            directive = `${type} "New ${type} ${randomName}" as ${randomName}\n`;
+            break;
         }
 
         const endUmlIndex = currentSource.lastIndexOf("@enduml");
         let newSource;
         if (endUmlIndex !== -1) {
-          newSource =
-            currentSource.substring(0, endUmlIndex) +
-            directive +
-            currentSource.substring(endUmlIndex);
+          newSource = currentSource.substring(0, endUmlIndex) + directive + currentSource.substring(endUmlIndex);
         } else {
           newSource = currentSource + `\n${directive}`;
         }
 
-        this.uiManager.setPlantUmlSource(newSource);
+        this.editorPanel.setSource(newSource);
         requestAnimationFrame(() => this.render());
       }
 
       _extractExistingPlantUMLNames(source) {
-          const existingNames = new Set();
-          // Regex for standard element declarations (class, interface, component, state, etc.)
-          // Captures 'as Alias', or unquoted name, or quoted name if no 'as' (less reliable for alias)
-          const elementDeclarationRegex = /(?:(?:abstract\s+)?class|interface|enum|component|package|node|database|actor|usecase|state|activity|sequence|boundary|control|entity|collections|participant|note|rectangle|cloud|agent|folder|frame|card|queue|artifact|diamond|fork|join|partition)\s+(?:\"([^\"]+)\"|(\w+))(?:\s+as\s+(\w+))?/g;
+        const existingNames = new Set();
+        const elementDeclarationRegex = /(?:(?:abstract\s+)?class|interface|enum|component|package|node|database|actor|usecase|state|activity|sequence|boundary|control|entity|collections|participant|note|rectangle|cloud|agent|folder|frame|card|queue|artifact|diamond|fork|join|partition)\s+(?:\"([^\"]+)\"|(\w+))(?:\s+as\s+(\w+))?/g;
+        const c4MacroRegex = /(Person|System|Container|ContainerDb|Component)(_Ext)?\s*\(\s*(\w+)/g;
+        const activityElementAliasRegex = /\(([^)]+)\)\s+as\s+(\w+)/g;
+        const statePseudoAliasRegex = /state\s*(?:\"[^\"]+\"|(\w+))\s+as\s+(\w+)\s+<<(?:start|end|choice|junction|terminate|history)>>/g;
 
-          // Regex for C4 model element declarations (e.g., Person(alias, ...), System(alias, ...))
-          // Captures the alias as the 3rd group
-          const c4MacroRegex = /(Person|System|Container|ContainerDb|Component)(_Ext)?\s*\(\s*(\w+)/g;
-
-          // Regex for activity elements (e.g., (Activity Label) as Alias)
-          // Captures alias in group 2
-          const activityElementAliasRegex = /\(([^)]+)\)\s+as\s+(\w+)/g;
-
-          // Regex for state pseudo-states defined with `state "Label" as Alias <<type>>`
-          const statePseudoAliasRegex = /state\s*(?:\"[^\"]+\"|(\w+))\s+as\s+(\w+)\s+<<(?:start|end|choice|junction|terminate|history)>>/g;
-
-          // Basic keywords that might appear as PlantUML IDs implicitly or if explicitly named (e.g. `start MyStart`)
-          // Not typically aliased with 'as', but PlantUML generates internal IDs.
-          // This is a more complex case for collisions. For now, rely on aliases.
-          // const keywordRegex = /\b(start|stop|detach|kill)\b/g;
-
-          let match;
-
-          while ((match = elementDeclarationRegex.exec(source)) !== null) {
-              if (match[3]) { existingNames.add(match[3]); } // Explicit 'as Alias'
-              else if (match[2]) { existingNames.add(match[2]); } // Unquoted name acting as alias
-              // match[1] is quoted name without 'as', often not used as alias for linking
-          }
-
-          while ((match = c4MacroRegex.exec(source)) !== null) {
-              if (match[3]) { existingNames.add(match[3]); } // Alias from C4 macro
-          }
-
-          while ((match = activityElementAliasRegex.exec(source)) !== null) {
-              if (match[2]) { existingNames.add(match[2]); } // Alias from (Activity) as Alias
-          }
-
-          while ((match = statePseudoAliasRegex.exec(source)) !== null) {
-              if (match[2]) { existingNames.add(match[2]); } // Alias from state <<type>>
-          }
-
-          // For keywords like 'start', 'stop', 'detach', 'kill', PlantUML assigns internal IDs like '_start1_'.
-          // We don't try to predict these, and assume generateRandomLetter will pick a non-colliding alias for *new* explicit aliases.
-          return existingNames;
+        let match;
+        while ((match = elementDeclarationRegex.exec(source)) !== null) {
+          if (match[3]) { existingNames.add(match[3]); }
+          else if (match[2]) { existingNames.add(match[2]); }
+        }
+        while ((match = c4MacroRegex.exec(source)) !== null) {
+          if (match[3]) { existingNames.add(match[3]); }
+        }
+        while ((match = activityElementAliasRegex.exec(source)) !== null) {
+          if (match[2]) { existingNames.add(match[2]); }
+        }
+        while ((match = statePseudoAliasRegex.exec(source)) !== null) {
+          if (match[2]) { existingNames.add(match[2]); }
+        }
+        return existingNames;
       }
 
       addRelationship() {
         const selectedIds = this.selectionManager.getSelections();
         if (selectedIds.length !== 2) {
           console.error("PlantUMLApp: Cannot add relationship, exactly two elements must be selected.");
-          // No longer display selection message in UI, just log error
           return;
         }
 
         const sourceId = selectedIds[0];
         const targetId = selectedIds[1];
-        const { type: relationshipType, label: relationshipLabel } = this.uiManager.getRelationshipFormValues();
+        const { type: relationshipType, label: relationshipLabel } = this.relationshipForm.getFormValues();
 
         let newRelationship = `${sourceId} ${relationshipType} ${targetId}`;
         if (relationshipLabel) {
@@ -1846,59 +1849,53 @@ R .. J : "asdf"
         }
         newRelationship += '\n';
 
-        console.log("Adding Relationship to Source:\n", newRelationship.trim()); // Debugging: Log the relationship being added
-        // alert("Adding Relationship:\n" + newRelationship.trim()); // Optional: Pop up an alert for debugging
-
-        const currentSource = this.uiManager.getPlantUmlSource();
+        const currentSource = this.editorPanel.getSource();
         const endUmlIndex = currentSource.lastIndexOf("@enduml");
         let updatedSource;
         if (endUmlIndex !== -1) {
-          updatedSource =
-            currentSource.substring(0, endUmlIndex) +
-            newRelationship +
-            currentSource.substring(endUmlIndex);
+          updatedSource = currentSource.substring(0, endUmlIndex) + newRelationship + currentSource.substring(endUmlIndex);
         } else {
           updatedSource = currentSource + `\n${newRelationship}`;
         }
 
-        this.uiManager.setPlantUmlSource(updatedSource);
-        this.cancelRelationship(); // Clears selection, hides form, clears preview
-        this.render(); // Re-render main diagram to show new relationship
-        console.log(`PlantUMLApp: Added relationship: ${newRelationship.trim()}`);
+        this.editorPanel.setSource(updatedSource);
+        this.cancelRelationship();
+        this.render();
       }
 
       cancelRelationship() {
-        this.handleClearSelectionRequest(); // Use the central handler
-        this.uiManager.resetRelationshipForm(); // Specific form reset
-        console.log("PlantUMLApp: Relationship cancelled, selection cleared.");
+        this.handleClearSelectionRequest();
+        this.relationshipForm.reset();
       }
 
       clearDiagram() {
         const defaultPlantUML = "@startuml\n@enduml";
-        this.uiManager.setPlantUmlSource(defaultPlantUML);
-        this.handleClearSelectionRequest(); // Clear selection, reset forms, etc.
+        this.editorPanel.setSource(defaultPlantUML);
+        this.handleClearSelectionRequest();
         this.render();
-        console.log("PlantUMLApp: Diagram cleared.");
       }
 
-      // Handle property changes from the properties pane
       handlePropertyChange(plantUMLId, propertyName, newValue) {
-          console.log(`Property change for ${plantUMLId}: ${propertyName} = ${newValue}`);
-          const currentSource = this.uiManager.getPlantUmlSource();
-          const updatedSource = Utils.updatePropertyInSource(currentSource, plantUMLId, propertyName, newValue);
+        const currentSource = this.editorPanel.getSource();
+        const updatedSource = Utils.updatePropertyInSource(currentSource, plantUMLId, propertyName, newValue);
 
-          if (updatedSource !== currentSource) {
-              this.uiManager.setPlantUmlSource(updatedSource);
-              this.render(); // Re-render the diagram to reflect changes
-          }
+        if (updatedSource !== currentSource) {
+          this.editorPanel.setSource(updatedSource);
+          this.render();
+        }
       }
 
-      // New: Handle changes in relationship form (type or label) to update preview
       handleRelationshipFormChange() {
-          if (this.currentPreviewSourceId && this.currentPreviewTargetId) {
-              const { type, label } = this.uiManager.getRelationshipFormValues();
-              this.uiManager.renderRelationshipPreview(this.currentPreviewSourceId, this.currentPreviewTargetId, type, label, this.uiManager.getPlantUmlSource());
-          }
+        if (this.currentPreviewSourceId && this.currentPreviewTargetId) {
+          const { type, label } = this.relationshipForm.getFormValues();
+          this.relationshipForm.renderPreview(
+            this.currentPreviewSourceId, 
+            this.currentPreviewTargetId, 
+            type, 
+            label, 
+            this.editorPanel.getSource()
+          );
+        }
       }
     }
 
