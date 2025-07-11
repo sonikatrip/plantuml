@@ -20,7 +20,7 @@
       --highlight-stroke-entity: #2ecc71; /* Pleasant green for selected entities */
       --highlight-stroke-relation: #e74c3c; /* Soft red for hovered relations */
       --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06); /* Softer, wider shadow */
-      --border-radius: 88px; /* Slightly more rounded corners, used for header */
+      --border-radius: 16px; /* Corrected: Less extreme rounding */
       --panel-border-radius: 8px; /* Standard rounded corners for panels */
 
 
@@ -41,16 +41,16 @@
     body {
       font-family: 'Inter', sans-serif;
       margin: 0;
-      padding: 20px; /* Increased padding */
+      padding: 20px;
       background-color: var(--bg-color);
       color: var(--text-color);
       display: grid;
       grid-template-areas:
-        "header header header"
-        "sidebar main-content properties-pane";
-      grid-template-columns: 240px 1fr 280px; /* Wider sidebar and properties pane */
+        "header header"
+        "sidebar main-content";
+      grid-template-columns: 240px 1fr;
       grid-template-rows: auto 1fr;
-      gap: 20px; /* Increased gap */
+      gap: 20px;
       min-height: 100vh;
       box-sizing: border-box;
       font-size: var(--font-size-base);
@@ -58,38 +58,62 @@
 
     h2 {
       grid-area: header;
-      color: var(--heading-color);
-      margin: -20px -20px 0 -20px; /* Extend to fill padding */
+      color: #ffffff;
+      background-color: #343438;
+      margin: -20px -20px 0 -20px;
       padding: 15px 20px;
-      background-color: #e8ecf1; /* Different color for banner */
       border-bottom: 1px solid var(--border-color);
-      font-size: var(--font-size-main-heading); /* Smaller main heading */
+      font-size: var(--font-size-main-heading);
       font-weight: 600;
-      border-top-left-radius: var(--border-radius); /* Keep large radius for header */
-      border-top-right-radius: var(--border-radius); /* Keep large radius for header */
-      box-shadow: var(--box-shadow); /* Add shadow to banner */
-      z-index: 10; /* Ensure it's above other content for visual separation */
-      position: sticky; /* Make it sticky if needed */
+      border-top-left-radius: var(--border-radius);
+      border-top-right-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      z-index: 10;
+      position: sticky;
       top: 0;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 15px;
     }
-    h2 .logo { /* Styling for the new SVG logo */
-        width: 30px; /* Adjust size as needed */
-        height: 30px;
+    h2 .logo {
+        width: 36px;
+        height: 36px;
         vertical-align: middle;
+        filter: invert(1) brightness(2);
+    }
+    .header-spacer {
+        flex-grow: 1;
+    }
+    #plantuml-server-url {
+        width: 200px;
+        padding: 6px 12px;
+        font-size: 0.8em;
+        background-color: rgba(0, 0, 0, 0.25);
+        color: #f0f0f0;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 6px;
+        outline: none;
+        margin: 0;
+    }
+    #plantuml-server-url:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.4);
     }
 
-    #sidebar, .editor-panel, #properties-pane, #relationship-form-container {
+
+    #sidebar, .editor-panel, #relationship-form-container {
       background-color: var(--panel-bg);
       border: 1px solid var(--border-color);
-      border-radius: var(--panel-border-radius); /* Use new variable for panel radius */
+      border-radius: var(--panel-border-radius);
       box-shadow: var(--box-shadow);
-      padding: 18px; /* Consistent padding for panels */
+      padding: 18px;
       display: flex;
       flex-direction: column;
-      gap: 15px; /* Consistent gap inside panels */
+      gap: 15px;
+    }
+
+    .preview-panel {
+        gap: 0 !important; /* Remove gap to connect header and properties bar */
     }
 
     #sidebar {
@@ -104,116 +128,116 @@
         margin-top: 0;
         margin-bottom: 10px;
         color: var(--heading-color);
-        font-size: var(--font-size-heading-section); /* Smaller section headings */
-        border-bottom: 1px solid var(--border-color); /* Solid line for section headers */
+        font-size: var(--font-size-heading-section);
+        border-bottom: 1px solid var(--border-color);
         padding-bottom: 8px;
         font-weight: 500;
     }
 
     #diagram-component-buttons {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); /* Slightly larger buttons */
-      gap: 8px; /* Slightly larger gap */
+      grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+      gap: 8px;
       margin-bottom: 15px;
     }
 
     /* General Button Styling */
     button {
-      padding: 8px 12px; /* Increased padding */
+      padding: 8px 12px;
       border: 1px solid var(--border-color);
-      border-radius: 6px; /* Consistent border-radius for buttons */
+      border-radius: 6px;
       background-color: var(--button-bg);
       color: var(--text-color);
       cursor: pointer;
-      font-size: var(--font-size-button); /* Smaller button font */
-      font-weight: 500; /* Medium weight for text */
+      font-size: var(--font-size-button);
+      font-weight: 500;
       transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       text-align: center;
-      gap: 6px; /* Increased gap for icon+text */
-      box-shadow: 0 2px 4px rgba(0,0,0,0.04); /* Subtle button shadow */
-      min-height: 60px; /* Slightly taller buttons */
+      gap: 6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+      min-height: 60px;
     }
     button:hover {
       background-color: var(--button-hover-bg);
       border-color: #cdd4da;
-      transform: translateY(-2px); /* Lift on hover */
-      box-shadow: 0 4px 8px rgba(0,0,0,0.08); /* More pronounced shadow on hover */
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.08);
     }
     button:active {
       background-color: var(--button-active-bg);
       border-color: #aeb6be;
-      transform: translateY(0); /* Press effect */
+      transform: translateY(0);
       box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
-    button i { /* Icon styling */
-        font-size: 1.2em; /* Slightly larger icon */
-        color: #667e96; /* Desaturated icon color */
+    button i {
+        font-size: 1.2em;
+        color: #667e96;
     }
     button:hover i {
         color: var(--text-color);
     }
 
-    /* Smaller top right buttons */
-    #render-diagram-btn,
-    #clear-diagram-btn {
-        padding: 6px 10px; /* Smaller padding */
-        min-height: auto; /* Allow height to shrink */
-        width: auto; /* Allow width to shrink */
-        flex-direction: row; /* Icon and text in a row */
-        gap: 5px; /* Smaller gap */
-        font-size: var(--font-size-small); /* Smaller font */
-        box-shadow: none; /* No shadow */
-        border: 1px solid var(--primary-color);
-        background-color: var(--primary-color);
-        color: white;
+    /* Component buttons in sidebar specifically */
+    #diagram-component-buttons button i {
+        font-size: 1.6em; /* 3pt larger icons */
+        color: var(--primary-color); /* Blue icons */
     }
-    #render-diagram-btn i,
-    #clear-diagram-btn i {
-        font-size: 1em; /* Smaller icon */
-        color: white;
+
+    .panel-header .controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
-    #render-diagram-btn:hover,
-    #clear-diagram-btn:hover {
-      background-color: var(--primary-hover);
-      border-color: var(--primary-hover);
-      transform: none; /* No lift on hover */
-      box-shadow: none; /* No shadow on hover */
-    }
-    #render-diagram-btn:active,
-    #clear-diagram-btn:active {
-        transform: none;
+
+    .panel-header .controls button {
+        padding: 6px 10px;
+        min-height: auto;
+        width: auto;
+        flex-direction: row;
+        gap: 5px;
+        font-size: var(--font-size-small);
         box-shadow: none;
+        background-color: transparent;
+        border-color: transparent;
+    }
+
+    .panel-header .controls button:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+     .panel-header .controls button i {
+      color: #dce4e6;
     }
 
 
     #main-content {
       grid-area: main-content;
       display: flex;
-      gap: 20px; /* Consistent gap */
+      gap: 20px;
       flex: 1;
     }
 
     .editor-panel {
       flex: 1;
       overflow: hidden;
-      display: flex; /* Use flexbox for vertical layout */
+      display: flex;
       flex-direction: column;
     }
 
-    .editor-panel .panel-header { /* New class for heading bar */
-        padding: 10px 18px; /* Match panel padding */
-        margin: 0;
-        background-color: #e8ecf1; /* Different color for panel headings */
-        border-bottom: 1px solid var(--border-color);
-        color: var(--heading-color);
-        font-size: var(--font-size-heading-section); /* Smaller editor panel headings */
+    .editor-panel .panel-header {
+        padding: 10px 18px;
+        margin: -18px -18px 0 -18px;
+        background-color: #4a4a4e;
+        border-bottom: 1px solid #343438;
+        color: #f0f0f0;
+        font-size: var(--font-size-heading-section);
         font-weight: 500;
-        border-top-left-radius: var(--panel-border-radius); /* Match panel radius */
-        border-top-right-radius: var(--panel-border-radius); /* Match panel radius */
+        border-top-left-radius: var(--panel-border-radius);
+        border-top-right-radius: var(--panel-border-radius);
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -222,24 +246,24 @@
     .editor-panel .panel-header h3 {
         margin: 0;
         padding: 0;
+        color: #f0f0f0;
     }
-
 
     textarea {
       width: 100%;
       flex-grow: 1;
       border: none;
-      padding: 18px; /* Match panel padding */
+      padding: 18px;
       font-family: 'Fira Code', monospace;
-      font-size: 0.95em; /* Slightly larger code font */
+      font-size: 0.95em;
       line-height: 1.5;
       resize: none;
       outline: none;
       background-color: var(--panel-bg);
       color: var(--text-color);
-      box-sizing: border-box; /* Include padding in width */
-      border-bottom-left-radius: var(--panel-border-radius); /* Match panel radius */
-      border-bottom-right-radius: var(--panel-border-radius); /* Match panel radius */
+      box-sizing: border-box;
+      border-bottom-left-radius: var(--panel-border-radius);
+      border-bottom-right-radius: var(--panel-border-radius);
     }
 
     #svg-container {
@@ -249,9 +273,10 @@
       justify-content: center;
       overflow: auto;
       background-color: var(--panel-bg);
-      padding: 18px; /* Match panel padding */
-      border-bottom-left-radius: var(--panel-border-radius); /* Match panel radius */
-      border-bottom-right-radius: var(--panel-border-radius); /* Match panel radius */
+      padding: 18px;
+      border-radius: 0;
+      border-bottom-left-radius: var(--panel-border-radius);
+      border-bottom-right-radius: var(--panel-border-radius);
     }
 
     #svg-container svg {
@@ -260,105 +285,86 @@
       display: block;
     }
 
-    #properties-pane {
-      grid-area: properties-pane;
-      /* Removed display: none; - it's always visible */
-      padding: 18px;
-    }
-
-    #properties-pane h3 {
-        margin-top: 0;
-        margin-bottom: 12px;
-        color: var(--heading-color);
-        font-size: var(--font-size-heading-section); /* Smaller properties pane heading */
+    #properties-form-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px 15px;
+        padding: 10px 18px;
+        margin: 0 -18px;
         border-bottom: 1px solid var(--border-color);
-        padding-bottom: 8px;
-        font-weight: 500;
+        background-color: #f8f9fa;
+        min-height: 32px;
+        transition: background-color 0.2s ease;
     }
-
-    #properties-pane label {
-        display: block;
-        margin-bottom: 6px;
+    #properties-form-controls {
+        display: flex;
+        align-items: center;
+        gap: inherit;
+        visibility: hidden;
+    }
+    #properties-form-controls.visible {
+        visibility: visible;
+    }
+    #properties-form-bar label {
+        margin-bottom: 0;
         font-weight: 500;
         font-size: var(--font-size-small);
-        color: #556a80; /* Slightly lighter text for labels */
+        color: #556a80;
     }
-
-    #properties-pane input[type="text"],
-    #properties-pane input[type="color"] {
-        width: 100%; /* Full width */
-        padding: 8px 10px; /* Consistent padding */
+    #properties-form-bar input[type="text"] {
+        width: 150px;
+        padding: 6px 8px;
+        font-size: var(--font-size-small);
+        margin-bottom: 0;
+    }
+    #properties-form-bar input[type="color"] {
+        width: 40px;
+        height: 30px;
+        padding: 2px;
+        margin-bottom: 0;
         border: 1px solid var(--border-color);
-        border-radius: 6px; /* Consistent border-radius */
-        font-size: var(--font-size-small);
-        margin-bottom: 12px; /* More vertical spacing */
-        box-sizing: border-box; /* Include padding in width */
-        background-color: var(--panel-bg);
-        color: var(--text-color);
-        box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); /* Subtle inner shadow */
-        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        border-radius: 4px;
     }
 
-    #properties-pane input[type="text"]:focus,
-    #properties-pane input[type="color"]:focus,
-    #relationship-form-container input:focus,
-    #relationship-form-container select:focus,
-    #plantuml-server-url:focus, /* New: focus style for the server URL input */
-    textarea:focus {
-        outline: none;
-        border-color: var(--primary-color);
-        box-shadow: inset 0 1px 3px rgba(0,0,0,0.08), 0 0 0 2px rgba(52, 152, 219, 0.2); /* Focus ring */
-    }
-
-    #properties-pane input[type="color"] {
-        height: 38px; /* Adjust height for color picker */
-        padding: 0; /* Color input controls its own padding */
-    }
 
     #relationship-form-container {
-      width: 350px; /* Slightly wider to accommodate preview */
+      width: 350px;
       position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
       z-index: 1000;
-      display: none; /* Still hidden by default, shown only on 2nd click */
-      padding: 15px; /* Slightly reduced padding */
-      gap: 10px; /* Reduce gap within the form for denser layout */
+      display: none;
+      padding: 15px;
+      gap: 10px;
     }
-
     #relationship-form-container h3 {
         margin-top: 0;
-        margin-bottom: 10px; /* Reduced margin */
+        margin-bottom: 10px;
         color: var(--heading-color);
-        font-size: var(--font-size-heading-section); /* Consistent smaller heading */
+        font-size: var(--font-size-heading-section);
         border-bottom: 1px solid var(--border-color);
         padding-bottom: 8px;
         font-weight: 500;
     }
-
     #relationship-form-container #relationship-preview-container {
-        /* Removed border and background */
-        /* Removed min-height and max-height */
-        padding: 0; /* No padding inside preview container */
+        padding: 0;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-bottom: 15px; /* Space between preview and select */
-        overflow: hidden; /* Hide overflow from SVG */
+        margin-bottom: 15px;
+        overflow: hidden;
     }
     #relationship-form-container #relationship-preview-container svg {
         max-width: 100%;
-        height: auto; /* Allow SVG height to determine container height */
+        height: auto;
         display: block;
     }
-
-
     #relationship-form-container label,
-    #relationship-form-container select,
     #relationship-form-container input[type="text"] {
         display: block;
-        margin-bottom: 10px; /* Reduced margin */
+        margin-bottom: 10px;
         width: 100%;
         padding: 8px 10px;
         border: 1px solid var(--border-color);
@@ -370,34 +376,28 @@
         box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
         transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
-
     #relationship-form-container #relationship-buttons {
         display: flex;
-        justify-content: space-between; /* Distribute buttons */
-        gap: 10px; /* Space between buttons */
-        margin-top: 15px; /* More spacing before buttons */
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 15px;
     }
-
     #relationship-form-container button {
-        flex: 1; /* Make buttons take equal space */
-        min-height: 40px; /* Ensure a minimum height */
-        padding: 8px; /* Smaller padding for icon-only buttons */
-        font-size: var(--font-size-base); /* Keep icon size reasonable */
+        flex: 1;
+        min-height: 40px;
+        padding: 8px;
+        font-size: var(--font-size-base);
     }
-
     #relationship-form-container button span {
-        display: none; /* Hide text for icon-only buttons */
+        display: none;
     }
-
     #relationship-form-container button i {
-        font-size: 1.2em; /* Ensure icons are visible */
+        font-size: 1.2em;
     }
-
-    /* Specific styles for relationship buttons */
     #add-relationship-btn {
         background-color: var(--add-rel-bg);
         border-color: var(--add-rel-bg);
-        color: #338833; /* Darker green text */
+        color: #338833;
     }
     #add-relationship-btn:hover {
         background-color: var(--add-rel-hover);
@@ -407,27 +407,24 @@
     #cancel-relationship-btn {
         background-color: var(--cancel-rel-bg);
         border-color: var(--cancel-rel-bg);
-        color: #cc3333; /* Darker red text */
+        color: #cc3333;
     }
     #cancel-relationship-btn:hover {
         background-color: var(--cancel-rel-hover);
         border-color: var(--cancel-rel-hover);
         color: #881a1a;
     }
-
-
     #selection-message {
         font-style: italic;
-        color: #7f8c8d; /* Muted color */
-        margin-bottom: 10px; /* Reduced margin */
+        color: #7f8c8d;
+        margin-bottom: 10px;
         font-size: var(--font-size-small);
-        display: none; /* Hide this element */
+        display: none;
     }
 
-    /* Tooltip */
     #tooltip {
       position: absolute;
-      background: rgba(44, 62, 80, 0.95); /* Darker, slightly blue tooltip */
+      background: rgba(44, 62, 80, 0.95);
       color: #fff;
       padding: 6px 10px;
       border-radius: 5px;
@@ -437,11 +434,10 @@
       transition: opacity 0.2s, transform 0.2s;
       z-index: 1000;
       white-space: nowrap;
-      transform: translate(10px, 10px); /* Increased offset */
+      transform: translate(10px, 10px);
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
 
-    /* SVG Highlight Styles - Kept these distinct for clarity */
     .hover-highlight rect,
     .hover-highlight path,
     .hover-highlight polygon,
@@ -463,20 +459,19 @@
       fill: var(--highlight-stroke-entity) !important;
     }
 
-    /* Dropdown for Diagram Types */
-    #diagram-type-select {
+    #sidebar select, #relationship-form-container select {
         width: 100%;
         padding: 8px 10px;
         border: 1px solid var(--border-color);
         border-radius: 6px;
         background-color: var(--panel-bg);
         color: var(--text-color);
-        font-size: var(--font-size-small);
-        appearance: none; /* Remove default dropdown arrow */
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23667e96' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E"); /* Custom arrow */
+        font-size: 0.9em;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23667e96' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
         background-repeat: no-repeat;
         background-position: right 10px center;
-        background-size: 20px; /* Larger arrow */
+        background-size: 20px;
         cursor: pointer;
         box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
         transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -488,14 +483,14 @@
   <h2>
     <img src="https://upload.wikimedia.org/wikipedia/commons/3/30/Plantuml_Logo.svg" alt="PlantUML Logo" class="logo">
     PlantUML Editor
+    <div class="header-spacer"></div>
+    <select id="plantuml-server-url">
+        <option value="https://www.plantuml.com/plantuml" selected>PlantUML Server</option>
+        <option value="http://localhost:8080">Local Server</option>
+    </select>
   </h2>
 
   <div id="sidebar">
-    <div class="sidebar-section">
-        <h3>Server URL</h3>
-        <input type="text" id="plantuml-server-url" placeholder="PlantUML Server URL" value="https://www.plantuml.com/plantuml">
-    </div>
-
     <div class="sidebar-section">
         <h3>Diagram Type</h3>
         <select id="diagram-type-select">
@@ -514,43 +509,50 @@
         <div id="diagram-component-buttons">
             </div>
     </div>
-  </div> <div id="main-content">
+  </div>
+
+  <div id="main-content">
     <div class="editor-panel">
         <div class="panel-header">
             <h3>PlantUML Source</h3>
-            <button id="clear-diagram-btn"><i class="fas fa-trash-alt"></i> Clear</button>
+            <div class="controls">
+                <button id="undo-btn" class="icon-btn" title="Undo (Ctrl+Z)"><i class="fas fa-undo"></i></button>
+                <button id="copy-btn" class="icon-btn" title="Copy to Clipboard"><i class="fas fa-clipboard"></i></button>
+                <button id="save-btn" class="icon-btn" title="Save File"><i class="fas fa-save"></i></button>
+                <button id="clear-diagram-btn" title="Clear Diagram"><i class="fas fa-trash-alt"></i></button>
+            </div>
         </div>
         <textarea id="plantuml-source">@startuml
 @enduml</textarea>
     </div>
 
-    <div class="editor-panel">
+    <div class="editor-panel preview-panel">
         <div class="panel-header">
             <h3>Diagram Preview</h3>
-            <button id="render-diagram-btn"><i class="fas fa-play"></i> Render</button>
+            <div class="controls">
+                <button id="render-diagram-btn" title="Render Diagram"><i class="fas fa-play"></i></button>
+            </div>
+        </div>
+        <div id="properties-form-bar">
+            <div id="properties-form-controls">
+                <label for="prop-name">Name/Alias:</label>
+                <input type="text" id="prop-name" data-property="name">
+
+                <label for="prop-bgcolor">BG Color:</label>
+                <input type="color" id="prop-bgcolor" data-property="bgcolor">
+
+                <label for="prop-linecolor">Border:</label>
+                <input type="color" id="prop-linecolor" data-property="linecolor">
+            </div>
         </div>
         <div id="svg-container"></div>
     </div>
-  </div> <div id="properties-pane">
-      <h3>Properties</h3>
-      <p id="properties-info" style="font-size: var(--font-size-small); color: #777;">Click an element to see its properties.</p>
-      <div id="properties-form" style="display: none;">
-          <label for="prop-name">Name/Alias:</label>
-          <input type="text" id="prop-name" data-property="name">
-
-          <label for="prop-bgcolor">Background Color:</label>
-          <input type="color" id="prop-bgcolor" data-property="bgcolor">
-
-          <label for="prop-linecolor">Border Color:</label>
-          <input type="color" id="prop-linecolor" data-property="linecolor">
-
-          </div>
   </div>
 
   <div id="relationship-form-container">
       <h3>Add Relationship</h3>
       <p id="selection-message">Click the first element to select it.</p>
-
+      <span id="selected-elements" style="display: none;"></span>
       <div id="relationship-preview-container">
           <p style="color: #7f8c8d; font-style: italic; font-size: var(--font-size-small);">Preview will appear here</p>
       </div>
@@ -838,10 +840,31 @@
 
                   switch (propertyName) {
                       case 'name':
-                          // Modifying name/alias is highly complex and error-prone due to references.
-                          // It's safer to not implement direct name change via this simple regex method for now.
-                          // A full AST parser would be required for robust name refactoring.
-                          console.warn(`Direct name/alias change for ${plantUMLId} to "${newValue}" not fully supported by simple source manipulation.`);
+                          // Pattern for C4 Macro: Person(alias, "label", ...)
+                          const c4MacroPattern = /((\w+)\s*\(\s*\w+\s*,\s*")([^"]+)(".*)/i;
+                          const c4MacroMatch = line.match(c4MacroPattern);
+                          if (c4MacroMatch) {
+                              line = line.replace(c4MacroPattern, `${c4MacroMatch[1]}${newValue}${c4MacroMatch[4]}`);
+                              break;
+                          }
+
+                          // Pattern for Activity: (label) as ID
+                          const activityAliasPattern = /(\()([^)]+)(\)\s+as\s+\w+)/i;
+                          const activityMatch = line.match(activityAliasPattern);
+                          if (activityMatch) {
+                              line = line.replace(activityAliasPattern, `${activityMatch[1]}${newValue}${activityMatch[3]}`);
+                              break;
+                          }
+
+                          // Pattern for standard quoted name: keyword "..." [as ID]
+                          const standardQuotedPattern = /((?:abstract\s+)?(?:class|interface|enum|component|package|node|database|actor|usecase|state|rectangle|cloud|agent|folder|frame|card|queue|artifact)\s+)"([^"]+)"/i;
+                          const standardQuotedMatch = line.match(standardQuotedPattern);
+                          if (standardQuotedMatch) {
+                              line = line.replace(standardQuotedPattern, `${standardQuotedMatch[1]}"${newValue}"`);
+                              break;
+                          }
+
+                          console.warn("Name editing is only supported for elements with an existing, distinct display name.");
                           break;
                       case 'bgcolor':
                           // Remove existing bgcolor (hex or named color) or {bgcolor} properties
@@ -935,25 +958,26 @@
         tooltip: document.getElementById("tooltip"),
         plantUmlSource: document.getElementById("plantuml-source"),
         relationshipFormContainer: document.getElementById("relationship-form-container"),
-        selectedElementsSpan: document.getElementById("selected-elements"), // This element is now hidden by CSS
-        selectionMessage: document.getElementById("selection-message"), // This element is now hidden by CSS
+        selectedElementsSpan: document.getElementById("selected-elements"),
+        selectionMessage: document.getElementById("selection-message"),
         relationshipTypeSelect: document.getElementById("relationship-type"),
         relationshipLabelInput: document.getElementById("relationship-label"),
         renderButton: document.getElementById("render-diagram-btn"),
         addRelationshipBtn: document.getElementById("add-relationship-btn"),
         cancelRelationshipBtn: document.getElementById("cancel-relationship-btn"),
         clearDiagramBtn: document.getElementById("clear-diagram-btn"),
+        undoBtn: document.getElementById("undo-btn"),
+        copyBtn: document.getElementById("copy-btn"),
+        saveBtn: document.getElementById("save-btn"),
         diagramTypeSelect: document.getElementById("diagram-type-select"),
         diagramComponentButtons: document.getElementById("diagram-component-buttons"),
         mainContent: document.getElementById("main-content"),
-        relationshipPreviewContainer: document.getElementById("relationship-preview-container"), // New Element
-        plantUmlServerUrlInput: document.getElementById("plantuml-server-url"), // NEW element
+        relationshipPreviewContainer: document.getElementById("relationship-preview-container"),
+        plantUmlServerUrlInput: document.getElementById("plantuml-server-url"),
 
-
-        // Properties Pane elements
-        propertiesPane: document.getElementById("properties-pane"),
-        propertiesInfo: document.getElementById("properties-info"),
-        propertiesForm: document.getElementById("properties-form"),
+        // Properties Controls (relocated)
+        propertiesFormBar: document.getElementById("properties-form-bar"),
+        propertiesFormControls: document.getElementById("properties-form-controls"),
         propName: document.getElementById("prop-name"),
         propBgColor: document.getElementById("prop-bgcolor"),
         propLineColor: document.getElementById("prop-linecolor"),
@@ -987,7 +1011,7 @@
               { type: 'note', label: 'Note', icon: 'fas fa-note-sticky', isGrouping: false }
           ],
           'state': [
-              { type: 'state', label: 'State', icon: 'fas fa-circle-dot', isGrouping: true }, // State can contain sub-states
+              { type: 'state', label: 'State', icon: 'fas fa-circle-dot', isGrouping: true },
               { type: 'start_state', label: 'Initial State', icon: 'fas fa-play-circle', isGrouping: false },
               { type: 'final_state', label: 'Final State', icon: 'fas fa-stop-circle', isGrouping: false },
               { type: 'choice_state', label: 'Choice', icon: 'fas fa-diamond', isGrouping: false },
@@ -996,10 +1020,10 @@
               { type: 'history_state', label: 'History', icon: 'fas fa-history', isGrouping: false },
               { type: 'note', label: 'Note', icon: 'fas fa-note-sticky', isGrouping: false }
           ],
-          'activity': [ // New Activity Diagram
+          'activity': [
               { type: 'start_activity', label: 'Start', icon: 'fas fa-play-circle', isGrouping: false },
               { type: 'stop_activity', label: 'End', icon: 'fas fa-stop-circle', isGrouping: false },
-              { type: 'activity_action', label: 'Activity/Action', icon: 'fas fa-shoe-prints', isGrouping: true }, // Can have actions inside
+              { type: 'activity_action', label: 'Activity/Action', icon: 'fas fa-shoe-prints', isGrouping: true },
               { type: 'decision_activity', label: 'Decision', icon: 'fas fa-question-circle', isGrouping: false },
               { type: 'fork_activity', label: 'Fork', icon: 'fas fa-code-branch', isGrouping: false },
               { type: 'join_activity', label: 'Join', icon: 'fas fa-code-merge', isGrouping: false },
@@ -1011,7 +1035,7 @@
           'sequence': [
               { type: 'participant', label: 'Participant', icon: 'fas fa-user', isGrouping: false },
               { type: 'actor', label: 'Actor', icon: 'fas fa-person', isGrouping: false },
-              { type: 'boundary', label: 'Boundary', icon: 'fas fa-box', isGrouping: true }, // Boundary can contain
+              { type: 'boundary', label: 'Boundary', icon: 'fas fa-box', isGrouping: true },
               { type: 'control', label: 'Control', icon: 'fas fa-gamepad', isGrouping: false },
               { type: 'entity', label: 'Entity', icon: 'fas fa-cube', isGrouping: false },
               { type: 'database', label: 'Database', icon: 'fas fa-database', isGrouping: false },
@@ -1019,14 +1043,14 @@
               { type: 'queue', label: 'Queue', icon: 'fas fa-stream', isGrouping: false },
               { type: 'note', label: 'Note', icon: 'fas fa-note-sticky', isGrouping: false }
           ],
-          'c4-general': [ // C4 model elements (keeping the existing ones)
+          'c4-general': [
               { type: 'Person', label: 'Person', icon: 'fas fa-user-circle', isGrouping: false },
               { type: 'Person_Ext', label: 'External Person', icon: 'fas fa-user-slash', isGrouping: false },
-              { type: 'System', label: 'System', icon: 'fas fa-desktop', isGrouping: true }, // Systems can contain containers
+              { type: 'System', label: 'System', icon: 'fas fa-desktop', isGrouping: true },
               { type: 'System_Ext', label: 'External System', icon: 'fas fa-server', isGrouping: true },
-              { type: 'Container', label: 'Container', icon: 'fas fa-box', isGrouping: true }, // Containers can contain components
+              { type: 'Container', label: 'Container', icon: 'fas fa-box', isGrouping: true },
               { type: 'ContainerDb', label: 'Container DB', icon: 'fas fa-database', isGrouping: true },
-              { type: 'Component', label: 'Component', icon: 'fas fa-box-archive', isGrouping: true }, // Components can contain classes
+              { type: 'Component', label: 'Component', icon: 'fas fa-box-archive', isGrouping: true },
               { type: 'note', label: 'Note', icon: 'fas fa-note-sticky', isGrouping: false }
           ]
       },
@@ -1039,55 +1063,59 @@
         onCancelRelationship: null,
         onClearDiagram: null,
         onPropertyChange: null,
-        onRelationshipFormChange: null, // New callback for relationship form input/select changes
-        onClearSelectionRequest: null, // NEW callback for global deselection
-        onServerUrlChange: null, // NEW callback for server URL change
+        onRelationshipFormChange: null,
+        onClearSelectionRequest: null,
+        onServerUrlChange: null,
+        onSourceEdit: null,
+        onUndoRequest: null,
+        onCopyRequest: null,
+        onSaveRequest: null,
       },
 
       init: function(appCallbacks) {
         Object.assign(this.callbacks, appCallbacks);
         this._setupEventListeners();
-        // NOW call renderComponentButtons AFTER listeners are set up.
         this.renderComponentButtons(this.elements.diagramTypeSelect.value);
-        this.positionRelationshipForm(); // Initial positioning, though it's hidden
+        this.positionRelationshipForm();
       },
 
       _setupEventListeners: function() {
         this.elements.plantUmlSource.addEventListener('input', Utils.debounce(() => {
-          this.callbacks.onRenderRequest && this.callbacks.onRenderRequest();
+          this.callbacks.onSourceEdit && this.callbacks.onSourceEdit();
         }, 700));
 
         this.elements.renderButton.addEventListener('click', () => {
           this.callbacks.onRenderRequest && this.callbacks.onRenderRequest();
         });
 
-        // This is the key change: ensure this listener is active
         this.elements.diagramTypeSelect.addEventListener('change', () => {
             this.renderComponentButtons(this.elements.diagramTypeSelect.value);
-            // Optionally, clear existing diagram when changing type
-            // this.callbacks.onClearDiagram && this.callbacks.onClearDiagram();
         });
 
-        // NEW: PlantUML Server URL input listener
-        this.elements.plantUmlServerUrlInput.addEventListener('change', () => { // Using 'change' for less frequent updates
+        this.elements.plantUmlServerUrlInput.addEventListener('change', () => {
             this.callbacks.onServerUrlChange && this.callbacks.onServerUrlChange(this.elements.plantUmlServerUrlInput.value);
         });
-        this.elements.plantUmlServerUrlInput.addEventListener('input', Utils.debounce(() => { // Using debounce for immediate feedback but not on every keypress
-            this.callbacks.onServerUrlChange && this.callbacks.onServerUrlChange(this.elements.plantUmlServerUrlInput.value);
-        }, 1000));
-
 
         this.elements.diagramComponentButtons.addEventListener('click', (event) => {
             const clickedButton = event.target.closest('button[data-action="insert-directive"]');
             if (clickedButton) {
                 const type = clickedButton.dataset.type;
-                const isGrouping = clickedButton.dataset.isGrouping === 'true'; // Get isGrouping property
+                const isGrouping = clickedButton.dataset.isGrouping === 'true';
                 this.callbacks.onInsertDirective && this.callbacks.onInsertDirective(type, isGrouping);
             }
         });
 
         this.elements.clearDiagramBtn.addEventListener('click', () => {
           this.callbacks.onClearDiagram && this.callbacks.onClearDiagram();
+        });
+        this.elements.undoBtn.addEventListener('click', () => {
+          this.callbacks.onUndoRequest && this.callbacks.onUndoRequest();
+        });
+        this.elements.copyBtn.addEventListener('click', () => {
+          this.callbacks.onCopyRequest && this.callbacks.onCopyRequest();
+        });
+        this.elements.saveBtn.addEventListener('click', () => {
+          this.callbacks.onSaveRequest && this.callbacks.onSaveRequest();
         });
 
         this.elements.addRelationshipBtn.addEventListener('click', () => {
@@ -1098,7 +1126,6 @@
           this.callbacks.onCancelRelationship && this.callbacks.onCancelRelationship();
         });
 
-        // Relationship Form input/select listeners
         this.elements.relationshipTypeSelect.addEventListener('change', () => {
             this.callbacks.onRelationshipFormChange && this.callbacks.onRelationshipFormChange();
         });
@@ -1106,8 +1133,6 @@
             this.callbacks.onRelationshipFormChange && this.callbacks.onRelationshipFormChange();
         }, 300));
 
-
-        // Properties pane input listeners
         this.elements.propName.addEventListener('input', Utils.debounce((e) => {
             if (this.currentSelectedPlantUMLId) {
                 this.callbacks.onPropertyChange && this.callbacks.onPropertyChange(
@@ -1115,7 +1140,6 @@
                 );
             }
         }, 500));
-
         this.elements.propBgColor.addEventListener('input', Utils.debounce((e) => {
             if (this.currentSelectedPlantUMLId) {
                 this.callbacks.onPropertyChange && this.callbacks.onPropertyChange(
@@ -1123,7 +1147,6 @@
                 );
             }
         }, 500));
-
         this.elements.propLineColor.addEventListener('input', Utils.debounce((e) => {
             if (this.currentSelectedPlantUMLId) {
                 this.callbacks.onPropertyChange && this.callbacks.onPropertyChange(
@@ -1132,21 +1155,20 @@
             }
         }, 500));
 
-        // NEW: Click on empty SVG space to deselect
         this.elements.svgContainer.addEventListener('click', (e) => {
-            // Check if the click target is the svg element itself or directly within it,
-            // and not an interactive 'g' element that represents a PlantUML component or link.
             const clickedInteractiveElement = e.target.closest("g.entity, g:has(title), g.link");
             if (!clickedInteractiveElement) {
-                // Clicked on empty space within SVG container or on the SVG itself
                 this.callbacks.onClearSelectionRequest && this.callbacks.onClearSelectionRequest();
             }
         });
 
-        // NEW: Escape key to deselect
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 this.callbacks.onClearSelectionRequest && this.callbacks.onClearSelectionRequest();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                e.preventDefault();
+                this.callbacks.onUndoRequest && this.callbacks.onUndoRequest();
             }
         });
       },
@@ -1290,11 +1312,6 @@
       },
 
       updateRelationshipForm: function(selectedIds) {
-        // We're no longer displaying the selected IDs text or selection message directly in the form
-        // this.elements.selectedElementsSpan.textContent = selectedIds.length > 0 ? selectedIds.join(', ') : 'None';
-        // this.elements.selectionMessage.textContent = `Selected ${selectedIds[0]} and ${selectedIds[1]}. Choose relationship and label.`;
-
-
         if (selectedIds.length === 2) {
             this.elements.relationshipFormContainer.style.display = 'flex'; // Use flex for column layout
             this.positionRelationshipForm(); // Position when shown
@@ -1302,11 +1319,8 @@
             this.elements.relationshipLabelInput.disabled = false;
             this.elements.addRelationshipBtn.disabled = false;
             this.elements.relationshipLabelInput.focus();
-            // The callback `onRelationshipFormChange` is now triggered by PlantUMLApp after setting currentPreviewSource/TargetId
-            // this.callbacks.onRelationshipFormChange && this.callbacks.onRelationshipFormChange(); // Trigger initial preview
         } else {
             this.elements.relationshipFormContainer.style.display = 'none';
-            // Selection message is now hidden via CSS. If we needed dynamic text, we'd manage visibility here.
             this.elements.relationshipTypeSelect.disabled = true;
             this.elements.relationshipLabelInput.disabled = true;
             this.elements.addRelationshipBtn.disabled = true;
@@ -1316,7 +1330,6 @@
 
       positionRelationshipForm: function() {
           // It's fixed, so no need for complex calculations, CSS handles it.
-          // This function now primarily ensures visibility.
       },
 
       resetRelationshipForm: function() {
@@ -1331,7 +1344,6 @@
         };
       },
 
-      // New function to render the relationship preview
       renderRelationshipPreview: async function(sourceId, targetId, type, label, fullSource, serverUrl) {
           const previewContainer = this.elements.relationshipPreviewContainer;
           if (!sourceId || !targetId) {
@@ -1341,11 +1353,9 @@
 
           let tempPlantUml = "@startuml\n";
 
-          // Try to get the full declaration lines from the main source
           let sourceDeclaration = Utils.extractDeclarationForPreview(sourceId, fullSource);
           let targetDeclaration = Utils.extractDeclarationForPreview(targetId, fullSource);
 
-          // Fallback if specific declarations aren't found or for special keywords
           const generateGenericDeclaration = (id) => {
             const lowerId = id.toLowerCase();
             if (lowerId === 'start') return 'start';
@@ -1353,47 +1363,33 @@
             if (lowerId === 'detach') return 'detach';
             if (lowerId === 'kill') return 'kill';
 
-            // Heuristic to guess if it's a quoted name or needs quoting
-            const displayName = id.includes(' ') ? `"${id}"` : id.split(/(?=[A-Z])/).join(' '); // Add quotes if space
+            const displayName = id.includes(' ') ? `"${id}"` : id.split(/(?=[A-Z])/).join(' ');
             const typeHint = this.elements.diagramTypeSelect.value;
 
-            // More intelligent fallback based on diagram type
             if (typeHint.includes('c4')) {
-                // For C4, default to System or Container
                 return `System(${id}, ${displayName}, "Generic System")`;
             } else if (typeHint.includes('activity')) {
-                return `(${displayName}) as ${id}`; // Activity label syntax
+                return `(${displayName}) as ${id}`;
             } else if (typeHint.includes('state')) {
                 return `state ${displayName} as ${id}`;
             } else if (typeHint.includes('sequence')) {
                 return `participant ${displayName} as ${id}`;
             }
-            // Default to class for other UML types
             return `class ${displayName} as ${id}`;
           };
 
-          if (!sourceDeclaration) {
-              sourceDeclaration = generateGenericDeclaration(sourceId);
-          }
-          if (!targetDeclaration) {
-              targetDeclaration = generateGenericDeclaration(targetId);
-          }
+          if (!sourceDeclaration) sourceDeclaration = generateGenericDeclaration(sourceId);
+          if (!targetDeclaration) targetDeclaration = generateGenericDeclaration(targetId);
 
           tempPlantUml += `${sourceDeclaration}\n`;
           tempPlantUml += `${targetDeclaration}\n`;
-
           tempPlantUml += `${sourceId} ${type} ${targetId}`;
           if (label) {
               tempPlantUml += ` : "${label}"`;
           }
           tempPlantUml += "\n@enduml";
 
-          console.log("PlantUML Preview Source:\n", tempPlantUml); // Debugging: Log the generated PlantUML for the preview
-
-
-          // Use the DiagramRenderer but target the specific preview container
           const encoded = plantumlEncoder.encode(tempPlantUml);
-          // NEW: Use the provided serverUrl for preview
           const url = `${serverUrl}/svg/${encoded}`;
 
           try {
@@ -1404,8 +1400,6 @@
                   let errorMessage = `HTTP error! Status: ${res.status} (${res.statusText || 'Unknown'})`;
                   if (errorMatch && errorMatch[1]) {
                       errorMessage += ` - PlantUML Syntax: ${errorMatch[1].replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec))}`;
-                  } else {
-                      errorMessage += ` - Server response: ${errorResponseText.substring(0, 200)}...`;
                   }
                   throw new Error(errorMessage);
               }
@@ -1414,14 +1408,13 @@
                   throw new Error("Received non-SVG content from PlantUML server.");
               }
               previewContainer.innerHTML = svgText.replace(/<\?xml.*\?>\n/, '');
-              // Optional: Adjust SVG size to fit the container better
               const svg = previewContainer.querySelector('svg');
               if (svg) {
                   svg.style.maxWidth = '100%';
-                  svg.style.height = 'auto'; // Ensure it fits vertically too (up to container max-height)
+                  svg.style.height = 'auto';
               }
           } catch (error) {
-              previewContainer.innerHTML = `<p style='color:red; font-size: var(--font-size-small);'>Preview Error: ${error.message}</p><p style='font-size: var(--font-size-small); color: #7f8c8d;'>Generated PlantUML for preview (check console): <pre>${tempPlantUml.split('\n').map(line => line.trim()).filter(Boolean).join('\n')}</pre></p>`;
+              previewContainer.innerHTML = `<p style='color:red; font-size: var(--font-size-small);'>Preview Error: ${error.message}</p>`;
               console.error("Failed to render relationship preview:", error);
           }
       },
@@ -1435,7 +1428,6 @@
           element.classList.remove("hover-highlight");
           element.classList.add("selected-element");
         } else {
-          // FIX: Corrected the class name from "selected-highlight" to "selected-element"
           element.classList.remove("selected-element");
           if (element.matches(':hover')) {
             element.classList.add("hover-highlight");
@@ -1453,38 +1445,29 @@
         this.elements.plantUmlSource.value = source;
       },
 
-      // Properties Pane functions (always visible)
-      currentSelectedPlantUMLId: null, // Track the ID of the element whose properties are currently shown
+      currentSelectedPlantUMLId: null,
 
       updatePropertiesPane: function(plantUMLId, sourceCode) {
-          this.currentSelectedPlantUMLId = plantUMLId; // Update the tracking ID
+          this.currentSelectedPlantUMLId = plantUMLId;
           if (!plantUMLId) {
               this.resetPropertiesPane();
               return;
           }
-
-          this.elements.propertiesInfo.style.display = 'none';
-          this.elements.propertiesForm.style.display = 'block';
-
+          this.elements.propertiesFormControls.classList.add('visible');
           const properties = Utils.extractPropertiesFromSource(plantUMLId, sourceCode);
-
           this.elements.propName.value = properties.name || plantUMLId;
-          this.elements.propBgColor.value = properties.bgcolor || '#ffffff'; // Default to white if none
-          this.elements.propLineColor.value = properties.linecolor || '#000000'; // Default to black if none
-
-          // Future: Populate other fields based on `properties` object
+          this.elements.propBgColor.value = properties.bgcolor || '#ffffff';
+          this.elements.propLineColor.value = properties.linecolor || '#000000';
       },
 
       resetPropertiesPane: function() {
-          this.currentSelectedPlantUMLId = null; // Clear the tracking ID
+          this.currentSelectedPlantUMLId = null;
+          this.elements.propertiesFormControls.classList.remove('visible');
           this.elements.propName.value = '';
           this.elements.propBgColor.value = '#ffffff';
           this.elements.propLineColor.value = '#000000';
-          this.elements.propertiesInfo.style.display = 'block';
-          this.elements.propertiesForm.style.display = 'none';
       },
 
-      // NEW: Getter/Setter for server URL input
       getPlantUmlServerUrl: function() {
           return this.elements.plantUmlServerUrlInput.value;
       },
@@ -1493,7 +1476,6 @@
           this.elements.plantUmlServerUrlInput.value = url;
       },
 
-      // Get the current text selection in the PlantUML source textarea
       getTextSelection: function() {
           const textarea = this.elements.plantUmlSource;
           return {
@@ -1521,20 +1503,15 @@
         const index = this.selectedPlantUMLIds.indexOf(plantUMLId);
 
         if (index > -1) {
-          // If already selected, deselect it
           this._deselect(plantUMLId, svgElement);
         } else {
-          // If not selected
           if (this.selectedPlantUMLIds.length === 2) {
-            // If already two selected, clear all and select only the new one
-            this.clearSelection(); // This will unhighlight the previous two
+            this.clearSelection();
             this._select(plantUMLId, svgElement);
           } else {
-            // Otherwise, just add it
             this._select(plantUMLId, svgElement);
           }
         }
-        // Always call the callback after selection changes for UI updates
         this.onSelectionChangeCallback && this.onSelectionChangeCallback(this.selectedPlantUMLIds);
       },
 
@@ -1548,7 +1525,7 @@
         const index = this.selectedPlantUMLIds.indexOf(plantUMLId);
         if (index > -1) {
             this.selectedPlantUMLIds.splice(index, 1);
-            this.selectedSVGElementRefs.splice(index, 1); // Assuming same index
+            this.selectedSVGElementRefs.splice(index, 1);
             this.onElementHighlightChange && this.onElementHighlightChange(svgElement, false);
         }
       },
@@ -1560,7 +1537,7 @@
         this.selectedPlantUMLIds = [];
         this.selectedSVGElementRefs = [];
         this.onSelectionChangeCallback && this.onSelectionChangeCallback(this.selectedPlantUMLIds);
-        console.log("SelectionManager: Selection cleared."); // Added for debugging
+        console.log("SelectionManager: Selection cleared.");
       },
 
       reapplySelectionHighlights: function(svgContainerElement) {
@@ -1572,7 +1549,6 @@
             this.onElementHighlightChange && this.onElementHighlightChange(element, true);
             return true;
           }
-          // console.log(`SelectionManager: Previously selected element (ID: ${id}) not found after re-render.`);
           return false;
         });
         this.selectedSVGElementRefs = newSelectedSVGElementRefs;
@@ -1586,8 +1562,7 @@
 
     // --- 4. DIAGRAM RENDERER MODULE ---
     const DiagramRenderer = {
-      // PLANTUML_API_BASE_URL: "https://www.plantuml.com/plantuml/svg/", // This will now be dynamic
-      currentServerUrl: "https://www.plantuml.com/plantuml", // Default value
+      currentServerUrl: "https://www.plantuml.com/plantuml",
       svgContainer: null,
       errorDisplayCallback: null,
 
@@ -1597,7 +1572,6 @@
       },
 
       setServerUrl: function(url) {
-          // Ensure URL ends without a trailing slash for consistent pathing
           this.currentServerUrl = url.endsWith('/') ? url.slice(0, -1) : url;
           console.log("DiagramRenderer: Server URL set to", this.currentServerUrl);
       },
@@ -1607,7 +1581,6 @@
           this.errorDisplayCallback("Invalid PlantUML source. Must start with @startuml and end with @enduml.");
           return null;
         }
-
         let encoded;
         try {
           encoded = plantumlEncoder.encode(plantUmlSource);
@@ -1615,15 +1588,12 @@
           this.errorDisplayCallback(`Error encoding PlantUML: ${e.message}`);
           return null;
         }
-
         if (!encoded) {
           this.errorDisplayCallback("PlantUML encoder returned an empty string. Check source.");
           return null;
         }
 
-        // Use the currentServerUrl (dynamically set)
         const url = `${this.currentServerUrl}/svg/${encoded}`;
-        console.log("DiagramRenderer: Attempting to fetch SVG. URL:", url);
 
         try {
           const res = await fetch(url);
@@ -1634,8 +1604,6 @@
             let userFriendlyError = `HTTP error! Status: ${res.status} (${res.statusText || 'Unknown'})`;
             if (errorMatch && errorMatch[1]) {
                 userFriendlyError += ` - PlantUML Syntax: ${errorMatch[1].replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec))}`;
-            } else {
-                userFriendlyError += ` - Server response: ${errorText.substring(0, 200)}...`;
             }
             this.errorDisplayCallback(userFriendlyError, url);
             return null;
@@ -1655,7 +1623,6 @@
 
           svgText = svgText.replace(/<\?xml.*\?>\n/, '');
           this.svgContainer.innerHTML = svgText;
-          console.log("DiagramRenderer: SVG rendered successfully.");
           return this.svgContainer.querySelector('svg');
         } catch (err) {
           this.errorDisplayCallback(`Network or unknown error: ${err.message}`, url);
@@ -1671,8 +1638,10 @@
         this.selectionManager = SelectionManager;
         this.diagramRenderer = DiagramRenderer;
 
-        this.currentPreviewSourceId = null; // New state variable for preview
-        this.currentPreviewTargetId = null; // New state variable for preview
+        this.history = [];
+        this.MAX_HISTORY = 51; // 50 undos = 51 states
+        this.currentPreviewSourceId = null;
+        this.currentPreviewTargetId = null;
 
         this.uiManager.init({
           onSvgElementClick: this.handleSvgElementClick.bind(this),
@@ -1682,9 +1651,13 @@
           onCancelRelationship: this.cancelRelationship.bind(this),
           onClearDiagram: this.clearDiagram.bind(this),
           onPropertyChange: this.handlePropertyChange.bind(this),
-          onRelationshipFormChange: this.handleRelationshipFormChange.bind(this), // New callback
-          onClearSelectionRequest: this.handleClearSelectionRequest.bind(this), // NEW: Pass the handler
-          onServerUrlChange: this.handleServerUrlChange.bind(this) // NEW: Pass the server URL change handler
+          onRelationshipFormChange: this.handleRelationshipFormChange.bind(this),
+          onClearSelectionRequest: this.handleClearSelectionRequest.bind(this),
+          onServerUrlChange: this.handleServerUrlChange.bind(this),
+          onSourceEdit: this.handleSourceEdit.bind(this),
+          onUndoRequest: this.handleUndo.bind(this),
+          onCopyRequest: this.handleCopy.bind(this),
+          onSaveRequest: this.handleSave.bind(this),
         });
 
         this.selectionManager.init(
@@ -1701,14 +1674,16 @@
       }
 
       _setupInitialState() {
-        // Load server URL from localStorage or use default
         const savedUrl = localStorage.getItem('plantumlServerUrl');
-        const initialUrl = savedUrl || DiagramRenderer.currentServerUrl; // Use default if nothing saved
+        const initialUrl = savedUrl || "https://www.plantuml.com/plantuml";
         this.uiManager.setPlantUmlServerUrl(initialUrl);
         this.diagramRenderer.setServerUrl(initialUrl);
 
+        const initialSource = this.uiManager.getPlantUmlSource();
+        this.pushHistory(initialSource);
+
         this.render();
-        this.uiManager.resetPropertiesPane(); // Initialize properties pane with "click an element" message
+        this.uiManager.resetPropertiesPane();
       }
 
       async render() {
@@ -1720,49 +1695,94 @@
         if (svgElement) {
           this.uiManager.setupSvgInteractivity();
           this.selectionManager.reapplySelectionHighlights(this.uiManager.elements.svgContainer);
-          // If there's an active single selection for properties pane, re-populate it
           const currentSelections = this.selectionManager.getSelections();
           if (currentSelections.length === 1) {
               this.uiManager.updatePropertiesPane(currentSelections[0], source);
           } else {
-              this.uiManager.resetPropertiesPane(); // Reset properties pane if nothing was selected (or was cleared, or multiple selected)
+              this.uiManager.resetPropertiesPane();
           }
         } else {
             this.selectionManager.clearSelection();
-            this.uiManager.resetPropertiesPane(); // Reset properties pane on error
+            this.uiManager.resetPropertiesPane();
         }
+      }
+
+      pushHistory(source) {
+        if (this.history.length > 0 && this.history[this.history.length - 1] === source) {
+            return;
+        }
+        this.history.push(source);
+        if (this.history.length > this.MAX_HISTORY) {
+            this.history.shift();
+        }
+      }
+
+      handleSourceEdit() {
+          const source = this.uiManager.getPlantUmlSource();
+          this.pushHistory(source);
+          this.render();
+      }
+
+      handleUndo() {
+          if (this.history.length <= 1) return;
+          this.history.pop();
+          const previousState = this.history[this.history.length - 1];
+          this.uiManager.setPlantUmlSource(previousState);
+          this.render();
+      }
+
+      handleCopy() {
+          const source = this.uiManager.getPlantUmlSource();
+          navigator.clipboard.writeText(source).then(() => {
+              const icon = this.uiManager.elements.copyBtn.querySelector('i');
+              icon.classList.remove('fa-clipboard');
+              icon.classList.add('fa-check');
+              setTimeout(() => {
+                  icon.classList.remove('fa-check');
+                  icon.classList.add('fa-clipboard');
+              }, 1500);
+          }).catch(err => {
+              console.error("Failed to copy text: ", err);
+              alert("Failed to copy to clipboard.");
+          });
+      }
+
+      handleSave() {
+          const source = this.uiManager.getPlantUmlSource();
+          const blob = new Blob([source], { type: 'text/plain;charset=utf-8' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'diagram.puml';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(a.href);
       }
 
       handleSvgElementClick(plantUMLId, svgElement) {
         this.selectionManager.toggleSelection(plantUMLId, svgElement);
-
         const updatedSelections = this.selectionManager.getSelections();
 
         if (updatedSelections.length === 1) {
-            // One item selected, show properties pane for it
-            this.uiManager.updatePropertiesPane(updatedSelections[0], this.uiManager.getPlantUmlSource());
-            this.uiManager.elements.relationshipFormContainer.style.display = 'none'; // Hide relationship form
-            this.uiManager.clearRelationshipPreview(); // Clear preview if it was shown
+            this.uiManager.updatePropertiesPane(plantUMLId, this.uiManager.getPlantUmlSource());
+            this.uiManager.elements.relationshipFormContainer.style.display = 'none';
+            this.uiManager.clearRelationshipPreview();
             this.currentPreviewSourceId = null;
             this.currentPreviewTargetId = null;
         } else if (updatedSelections.length === 2) {
-            // Two items selected, update relationship form (it will now appear)
             this.currentPreviewSourceId = updatedSelections[0];
             this.currentPreviewTargetId = updatedSelections[1];
-            // Keep properties of the *first* selected element (or simply don't update properties pane now)
             this.uiManager.updatePropertiesPane(updatedSelections[0], this.uiManager.getPlantUmlSource());
-            // Trigger initial preview render NOW that both IDs are set
-            this.handleRelationshipFormChange(); // This will call UIManager.renderRelationshipPreview
-        } else { // 0 selections after toggle (e.g., deselected the last item, or clicked a 3rd item)
-            this.uiManager.resetPropertiesPane(); // Reset properties pane
-            this.uiManager.elements.relationshipFormContainer.style.display = 'none'; // Hide relationship form
-            this.uiManager.clearRelationshipPreview(); // Clear preview
+            this.handleRelationshipFormChange();
+        } else {
+            this.uiManager.resetPropertiesPane();
+            this.uiManager.elements.relationshipFormContainer.style.display = 'none';
+            this.uiManager.clearRelationshipPreview();
             this.currentPreviewSourceId = null;
             this.currentPreviewTargetId = null;
         }
       }
 
-      // NEW: Central handler for any request to clear selection
       handleClearSelectionRequest() {
           this.selectionManager.clearSelection();
           this.uiManager.resetPropertiesPane();
@@ -1772,16 +1792,14 @@
           this.currentPreviewTargetId = null;
       }
 
-      // NEW: Handle server URL changes
       handleServerUrlChange(newUrl) {
           this.diagramRenderer.setServerUrl(newUrl);
-          localStorage.setItem('plantumlServerUrl', newUrl); // Save to localStorage
-          this.render(); // Re-render the diagram with the new server URL
+          localStorage.setItem('plantumlServerUrl', newUrl);
+          this.render();
       }
 
-
       insertPlantUMLDirective(type, isGrouping) {
-        this.handleClearSelectionRequest(); // Clear selection when adding new element
+        this.handleClearSelectionRequest();
 
         const currentSource = this.uiManager.getPlantUmlSource();
         const existingNames = this._extractExistingPlantUMLNames(currentSource);
@@ -1794,11 +1812,9 @@
         let directiveOpening;
         let directiveClosing = '';
         let newSource;
-        const indentLevel = 2; // Standard indentation for nested elements
+        const indentLevel = 2;
 
-        // Determine the base directive string
         switch (type) {
-            // Grouping Elements
             case 'component':
             case 'node':
             case 'cloud':
@@ -1806,21 +1822,20 @@
             case 'frame':
             case 'rectangle':
             case 'state':
-            case 'activity_action': // Activities can contain other actions/decisions in curly braces
+            case 'activity_action':
             case 'partition_activity':
             case 'boundary':
             case 'System':
             case 'System_Ext':
             case 'Container':
             case 'ContainerDb':
-            case 'Component': // C4 Component can contain sub-components/classes
+            case 'Component':
             case 'database':
             case 'agent':
             case 'artifact':
                 directiveOpening = `${type} "New ${type.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}" as ${randomName} {\n`;
                 directiveClosing = `}\n`;
                 break;
-            // Non-grouping Elements
             case 'class':
             case 'interface':
             case 'abstract class':
@@ -1834,16 +1849,12 @@
             case 'queue':
                 directiveOpening = `${type} "New ${type.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}" as ${randomName}\n`;
                 break;
-
-            // State Diagram specific elements (non-grouping by default, but state can be grouping)
             case 'start_state': directiveOpening = `start\n`; break;
             case 'final_state': directiveOpening = `stop\n`; break;
             case 'choice_state': directiveOpening = `diamond "Choice ${randomName}" as ${randomName}\n`; break;
             case 'junction_state': directiveOpening = `circle "Junction" as ${randomName}\n`; break;
-            case 'terminate_state': directiveOpening = `kill\n`; break; // 'kill' can be used for terminate
+            case 'terminate_state': directiveOpening = `kill\n`; break;
             case 'history_state': directiveOpening = `state "History" as ${randomName} <<history>>\n`; break;
-
-            // Activity Diagram specific elements
             case 'start_activity': directiveOpening = `start\n`; break;
             case 'stop_activity': directiveOpening = `stop\n`; break;
             case 'decision_activity': directiveOpening = `if (Condition ${randomName}?) then (yes)\n  ' -- action for yes --\nelse (no)\n  ' -- action for no --\nendif\n`; break;
@@ -1852,8 +1863,6 @@
             case 'note': directiveOpening = `note "New Note ${randomName}" as ${randomName}\n`; break;
             case 'detach_activity': directiveOpening = `detach\n`; break;
             case 'kill_activity': directiveOpening = `kill\n`; break;
-
-            // C4 Model specific elements that are not grouping
             case 'Person':
             case 'Person_Ext':
                 directiveOpening = `${type}(${randomName}, "New ${type.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}", "Description for ${type}")\n`;
@@ -1864,104 +1873,64 @@
                 break;
         }
 
-        // Apply smart wrapping if a grouping element is clicked and text is selected
         if (isGrouping && hasSelection) {
             const indentedSelectedText = Utils.indentCode(selectedText, indentLevel);
             const originalLeadingIndentation = Utils.getLeadingIndentation(selectedText);
-
-            // Reconstruct the directive opening to include the detected indentation
-            // This ensures the new grouping element aligns with the wrapped content's original indentation level
             const trimmedDirectiveOpening = directiveOpening.trim();
             const indentedDirectiveOpening = originalLeadingIndentation + trimmedDirectiveOpening + "\n";
             const indentedDirectiveClosing = originalLeadingIndentation + directiveClosing.trim() + "\n";
-
-
             newSource =
                 selection.value.substring(0, selection.start) +
                 indentedDirectiveOpening +
-                indentedSelectedText + "\n" + // Add newline after indented content if not already there
+                indentedSelectedText + "\n" +
                 indentedDirectiveClosing +
                 selection.value.substring(selection.end);
-
-            // Set the cursor after the inserted block
             this.uiManager.elements.plantUmlSource.value = newSource;
-            const newCursorPos = selection.start + indentedDirectiveOpening.length + indentedSelectedText.length + indentedDirectiveClosing.length + 1; // +1 for the added newline if any
+            const newCursorPos = selection.start + indentedDirectiveOpening.length + indentedSelectedText.length + indentedDirectiveClosing.length + 1;
             this.uiManager.elements.plantUmlSource.setSelectionRange(newCursorPos, newCursorPos);
-
         } else {
-            // Default behavior: insert before @enduml
             const endUmlIndex = currentSource.lastIndexOf("@enduml");
             if (endUmlIndex !== -1) {
-                // Ensure there's a newline before inserting the directive if it's not already on a new line
                 const insertPoint = (currentSource[endUmlIndex - 1] === '\n') ? endUmlIndex : endUmlIndex;
                 newSource =
                     currentSource.substring(0, insertPoint) +
                     directiveOpening +
-                    directiveClosing + // Add closing brace if it's a grouping element, even if no selection
+                    directiveClosing +
                     currentSource.substring(endUmlIndex);
             } else {
-                newSource = currentSource + `\n${directiveOpening}${directiveClosing}`; // Fallback if no @enduml
+                newSource = currentSource + `\n${directiveOpening}${directiveClosing}`;
             }
             this.uiManager.setPlantUmlSource(newSource);
         }
-
-        requestAnimationFrame(() => this.render());
+        this.handleSourceEdit(); // Use this to push to history and render
       }
 
       _extractExistingPlantUMLNames(source) {
           const existingNames = new Set();
-          // Regex for standard element declarations (class, interface, component, state, etc.)
-          // Captures 'as Alias', or unquoted name, or quoted name if no 'as' (less reliable for alias)
           const elementDeclarationRegex = /(?:(?:abstract\s+)?class|interface|enum|component|package|node|database|actor|usecase|state|activity|sequence|boundary|control|entity|collections|participant|note|rectangle|cloud|agent|folder|frame|card|queue|artifact|diamond|fork|join|partition)\s+(?:\"([^\"]+)\"|(\w+))(?:\s+as\s+(\w+))?/g;
-
-          // Regex for C4 model element declarations (e.g., Person(alias, ...), System(alias, ...))
-          // Captures the alias as the 3rd group
           const c4MacroRegex = /(Person|System|Container|ContainerDb|Component)(_Ext)?\s*\(\s*(\w+)/g;
-
-          // Regex for activity elements (e.g., (Activity Label) as Alias)
-          // Captures alias in group 2
           const activityElementAliasRegex = /\(([^)]+)\)\s+as\s+(\w+)/g;
-
-          // Regex for state pseudo-states defined with `state "Label" as Alias <<type>>`
           const statePseudoAliasRegex = /state\s*(?:\"[^\"]+\"|(\w+))\s+as\s+(\w+)\s+<<(?:start|end|choice|junction|terminate|history)>>/g;
-
-          // Basic keywords that might appear as PlantUML IDs implicitly or if explicitly named (e.g. `start MyStart`)
-          // Not typically aliased with 'as', but PlantUML generates internal IDs.
-          // This is a more complex case for collisions. For now, rely on aliases.
-          // const keywordRegex = /\b(start|stop|detach|kill)\b/g;
-
           let match;
-
           while ((match = elementDeclarationRegex.exec(source)) !== null) {
-              if (match[3]) { existingNames.add(match[3]); } // Explicit 'as Alias'
-              else if (match[2]) { existingNames.add(match[2]); } // Unquoted name acting as alias
-              // match[1] is quoted name without 'as', often not used as alias for linking
+              if (match[3]) { existingNames.add(match[3]); }
+              else if (match[2]) { existingNames.add(match[2]); }
           }
-
           while ((match = c4MacroRegex.exec(source)) !== null) {
-              if (match[3]) { existingNames.add(match[3]); } // Alias from C4 macro
+              if (match[3]) { existingNames.add(match[3]); }
           }
-
           while ((match = activityElementAliasRegex.exec(source)) !== null) {
-              if (match[2]) { existingNames.add(match[2]); } // Alias from (Activity) as Alias
+              if (match[2]) { existingNames.add(match[2]); }
           }
-
           while ((match = statePseudoAliasRegex.exec(source)) !== null) {
-              if (match[2]) { existingNames.add(match[2]); } // Alias from state <<type>>
+              if (match[2]) { existingNames.add(match[2]); }
           }
-
-          // For keywords like 'start', 'stop', 'detach', 'kill', PlantUML assigns internal IDs like '_start1_'.
-          // We don't try to predict these, and assume generateRandomLetter will pick a non-colliding alias for *new* explicit aliases.
           return existingNames;
       }
 
       addRelationship() {
         const selectedIds = this.selectionManager.getSelections();
-        if (selectedIds.length !== 2) {
-          console.error("PlantUMLApp: Cannot add relationship, exactly two elements must be selected.");
-          // No longer display selection message in UI, just log error
-          return;
-        }
+        if (selectedIds.length !== 2) return;
 
         const sourceId = selectedIds[0];
         const targetId = selectedIds[1];
@@ -1972,9 +1941,6 @@
           newRelationship += ` : "${relationshipLabel}"`;
         }
         newRelationship += '\n';
-
-        console.log("Adding Relationship to Source:\n", newRelationship.trim()); // Debugging: Log the relationship being added
-        // alert("Adding Relationship:\n" + newRelationship.trim()); // Optional: Pop up an alert for debugging
 
         const currentSource = this.uiManager.getPlantUmlSource();
         const endUmlIndex = currentSource.lastIndexOf("@enduml");
@@ -1987,40 +1953,32 @@
         } else {
           updatedSource = currentSource + `\n${newRelationship}`;
         }
-
         this.uiManager.setPlantUmlSource(updatedSource);
-        this.cancelRelationship(); // Clears selection, hides form, clears preview
-        this.render(); // Re-render main diagram to show new relationship
-        console.log(`PlantUMLApp: Added relationship: ${newRelationship.trim()}`);
+        this.cancelRelationship();
+        this.handleSourceEdit(); // Push to history and render
       }
 
       cancelRelationship() {
-        this.handleClearSelectionRequest(); // Use the central handler
-        this.uiManager.resetRelationshipForm(); // Specific form reset
-        console.log("PlantUMLApp: Relationship cancelled, selection cleared.");
+        this.handleClearSelectionRequest();
+        this.uiManager.resetRelationshipForm();
       }
 
       clearDiagram() {
         const defaultPlantUML = "@startuml\n@enduml";
         this.uiManager.setPlantUmlSource(defaultPlantUML);
-        this.handleClearSelectionRequest(); // Clear selection, reset forms, etc.
-        this.render();
-        console.log("PlantUMLApp: Diagram cleared.");
+        this.handleClearSelectionRequest();
+        this.handleSourceEdit(); // Push cleared state to history and render
       }
 
-      // Handle property changes from the properties pane
       handlePropertyChange(plantUMLId, propertyName, newValue) {
-          console.log(`Property change for ${plantUMLId}: ${propertyName} = ${newValue}`);
           const currentSource = this.uiManager.getPlantUmlSource();
           const updatedSource = Utils.updatePropertyInSource(currentSource, plantUMLId, propertyName, newValue);
-
           if (updatedSource !== currentSource) {
               this.uiManager.setPlantUmlSource(updatedSource);
-              this.render(); // Re-render the diagram to reflect changes
+              this.handleSourceEdit();
           }
       }
 
-      // New: Handle changes in relationship form (type or label) to update preview
       handleRelationshipFormChange() {
           if (this.currentPreviewSourceId && this.currentPreviewTargetId) {
               const { type, label } = this.uiManager.getRelationshipFormValues();
@@ -2030,7 +1988,7 @@
                   type,
                   label,
                   this.uiManager.getPlantUmlSource(),
-                  this.diagramRenderer.currentServerUrl // Pass the current server URL
+                  this.diagramRenderer.currentServerUrl
               );
           }
       }
