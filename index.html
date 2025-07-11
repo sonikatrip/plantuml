@@ -303,6 +303,7 @@
     #properties-pane input[type="color"]:focus,
     #relationship-form-container input:focus,
     #relationship-form-container select:focus,
+    #plantuml-server-url:focus, /* New: focus style for the server URL input */
     textarea:focus {
         outline: none;
         border-color: var(--primary-color);
@@ -491,6 +492,11 @@
 
   <div id="sidebar">
     <div class="sidebar-section">
+        <h3>Server URL</h3>
+        <input type="text" id="plantuml-server-url" placeholder="PlantUML Server URL" value="https://www.plantuml.com/plantuml">
+    </div>
+
+    <div class="sidebar-section">
         <h3>Diagram Type</h3>
         <select id="diagram-type-select">
             <option value="class-object">UML Class & Object</option>
@@ -668,7 +674,7 @@ R .. J : "asdf"
 
           // Additional regex for C4 macros and activity (label) as alias
           const c4MacroDeclarationRegex = new RegExp(`(Person|System|Container|ContainerDb|Component)(_Ext)?\\s*\\(\\s*${escapedId}\\b`, 'i');
-          const activityAliasDeclarationRegex = new RegExp(`\\(([^)]+)\\)\\s+as\\s+${escapedId}\\b`, 'i');
+          const activityAliasDeclarationRegex = new RegExp(`\\(([^)]+)\\)\\s+as\\s+(\\w+)`, 'i');
 
 
           for (const line of lines) {
@@ -764,7 +770,7 @@ R .. J : "asdf"
           const c4MacroDeclarationRegex = new RegExp(`(Person|System|Container|ContainerDb|Component)(_Ext)?\\s*\\(\\s*${escapedId}\\b`, 'i');
 
           // Regex for activity elements like `(label) as alias`
-          const activityAliasDeclarationRegex = new RegExp(`\\(([^)]+)\\)\\s+as\\s+${escapedId}\\b`, 'i');
+          const activityAliasDeclarationRegex = new RegExp(`\\(([^)]+)\\)\\s+as\\s+(\\w+)`, 'i');
 
           // Check for direct keywords like start/stop that don't have aliases
           const directKeywordMatch = ['start', 'stop', 'detach', 'kill'].includes(plantUMLId.toLowerCase());
@@ -805,7 +811,7 @@ R .. J : "asdf"
               , 'i'
           );
           const c4MacroDeclarationRegex = new RegExp(`(Person|System|Container|ContainerDb|Component)(_Ext)?\\s*\\(\\s*${escapedId}\\b`, 'i');
-          const activityAliasDeclarationRegex = new RegExp(`\\(([^)]+)\\)\\s+as\\s+${escapedId}\\b`, 'i');
+          const activityAliasDeclarationRegex = new RegExp(`\\(([^)]+)\\)\\s+as\\s+(\\w+)`, 'i');
           const directKeywordMatch = ['start', 'stop', 'detach', 'kill'].includes(plantUMLId.toLowerCase());
 
 
@@ -897,6 +903,8 @@ R .. J : "asdf"
         diagramComponentButtons: document.getElementById("diagram-component-buttons"),
         mainContent: document.getElementById("main-content"),
         relationshipPreviewContainer: document.getElementById("relationship-preview-container"), // New Element
+        plantUmlServerUrlInput: document.getElementById("plantuml-server-url"), // NEW element
+
 
         // Properties Pane elements
         propertiesPane: document.getElementById("properties-pane"),
@@ -986,6 +994,7 @@ R .. J : "asdf"
         onPropertyChange: null,
         onRelationshipFormChange: null, // New callback for relationship form input/select changes
         onClearSelectionRequest: null, // NEW callback for global deselection
+        onServerUrlChange: null, // NEW callback for server URL change
       },
 
       init: function(appCallbacks) {
@@ -1011,6 +1020,15 @@ R .. J : "asdf"
             // Optionally, clear existing diagram when changing type
             // this.callbacks.onClearDiagram && this.callbacks.onClearDiagram();
         });
+
+        // NEW: PlantUML Server URL input listener
+        this.elements.plantUmlServerUrlInput.addEventListener('change', () => { // Using 'change' for less frequent updates
+            this.callbacks.onServerUrlChange && this.callbacks.onServerUrlChange(this.elements.plantUmlServerUrlInput.value);
+        });
+        this.elements.plantUmlServerUrlInput.addEventListener('input', Utils.debounce(() => { // Using debounce for immediate feedback but not on every keypress
+            this.callbacks.onServerUrlChange && this.callbacks.onServerUrlChange(this.elements.plantUmlServerUrlInput.value);
+        }, 1000));
+
 
         this.elements.diagramComponentButtons.addEventListener('click', (event) => {
             const clickedButton = event.target.closest('button[data-action="insert-directive"]');
@@ -1265,7 +1283,7 @@ R .. J : "asdf"
       },
 
       // New function to render the relationship preview
-      renderRelationshipPreview: async function(sourceId, targetId, type, label, fullSource) {
+      renderRelationshipPreview: async function(sourceId, targetId, type, label, fullSource, serverUrl) {
           const previewContainer = this.elements.relationshipPreviewContainer;
           if (!sourceId || !targetId) {
               previewContainer.innerHTML = '<p style="color: #7f8c8d; font-style: italic; font-size: var(--font-size-small);">Preview will appear here</p>';
@@ -1287,12 +1305,22 @@ R .. J : "asdf"
             if (lowerId === 'kill') return 'kill';
 
             // Heuristic to guess if it's a quoted name or needs quoting
-            const displayName = id.includes(' ') ? id : id.split(/(?=[A-Z])/).join(' ');
-            const quotedDisplayName = `"${displayName}"`;
+            const displayName = id.includes(' ') ? `"${id}"` : id.split(/(?=[A-Z])/).join(' '); // Add quotes if space
+            const typeHint = this.elements.diagramTypeSelect.value;
 
-            // A more robust fallback could try to guess type from current diagramType or common types
-            // For now, default to `class` if it's not a special keyword.
-            return `class ${quotedDisplayName} as ${id}`;
+            // More intelligent fallback based on diagram type
+            if (typeHint.includes('c4')) {
+                // For C4, default to System or Container
+                return `System(${id}, ${displayName}, "Generic System")`;
+            } else if (typeHint.includes('activity')) {
+                return `(${displayName}) as ${id}`; // Activity label syntax
+            } else if (typeHint.includes('state')) {
+                return `state ${displayName} as ${id}`;
+            } else if (typeHint.includes('sequence')) {
+                return `participant ${displayName} as ${id}`;
+            }
+            // Default to class for other UML types
+            return `class ${displayName} as ${id}`;
           };
 
           if (!sourceDeclaration) {
@@ -1316,7 +1344,8 @@ R .. J : "asdf"
 
           // Use the DiagramRenderer but target the specific preview container
           const encoded = plantumlEncoder.encode(tempPlantUml);
-          const url = `${DiagramRenderer.PLANTUML_API_BASE_URL}${encoded}`;
+          // NEW: Use the provided serverUrl for preview
+          const url = `${serverUrl}/svg/${encoded}`;
 
           try {
               const res = await fetch(url);
@@ -1405,6 +1434,15 @@ R .. J : "asdf"
           this.elements.propertiesInfo.style.display = 'block';
           this.elements.propertiesForm.style.display = 'none';
       },
+
+      // NEW: Getter/Setter for server URL input
+      getPlantUmlServerUrl: function() {
+          return this.elements.plantUmlServerUrlInput.value;
+      },
+
+      setPlantUmlServerUrl: function(url) {
+          this.elements.plantUmlServerUrlInput.value = url;
+      },
     };
 
     // --- 3. SELECTION MANAGER MODULE ---
@@ -1489,13 +1527,20 @@ R .. J : "asdf"
 
     // --- 4. DIAGRAM RENDERER MODULE ---
     const DiagramRenderer = {
-      PLANTUML_API_BASE_URL: "https://www.plantuml.com/plantuml/svg/",
+      // PLANTUML_API_BASE_URL: "https://www.plantuml.com/plantuml/svg/", // This will now be dynamic
+      currentServerUrl: "https://www.plantuml.com/plantuml", // Default value
       svgContainer: null,
       errorDisplayCallback: null,
 
       init: function(svgContainerElement, errorCallback) {
         this.svgContainer = svgContainerElement;
         this.errorDisplayCallback = errorCallback;
+      },
+
+      setServerUrl: function(url) {
+          // Ensure URL ends without a trailing slash for consistent pathing
+          this.currentServerUrl = url.endsWith('/') ? url.slice(0, -1) : url;
+          console.log("DiagramRenderer: Server URL set to", this.currentServerUrl);
       },
 
       render: async function(plantUmlSource) {
@@ -1517,8 +1562,9 @@ R .. J : "asdf"
           return null;
         }
 
-        const url = `${this.PLANTUML_API_BASE_URL}${encoded}`;
-        // console.log("DiagramRenderer: Attempting to fetch SVG. URL:", url);
+        // Use the currentServerUrl (dynamically set)
+        const url = `${this.currentServerUrl}/svg/${encoded}`;
+        console.log("DiagramRenderer: Attempting to fetch SVG. URL:", url);
 
         try {
           const res = await fetch(url);
@@ -1550,7 +1596,7 @@ R .. J : "asdf"
 
           svgText = svgText.replace(/<\?xml.*\?>\n/, '');
           this.svgContainer.innerHTML = svgText;
-          // console.log("DiagramRenderer: SVG rendered successfully.");
+          console.log("DiagramRenderer: SVG rendered successfully.");
           return this.svgContainer.querySelector('svg');
         } catch (err) {
           this.errorDisplayCallback(`Network or unknown error: ${err.message}`, url);
@@ -1578,7 +1624,8 @@ R .. J : "asdf"
           onClearDiagram: this.clearDiagram.bind(this),
           onPropertyChange: this.handlePropertyChange.bind(this),
           onRelationshipFormChange: this.handleRelationshipFormChange.bind(this), // New callback
-          onClearSelectionRequest: this.handleClearSelectionRequest.bind(this) // NEW: Pass the handler
+          onClearSelectionRequest: this.handleClearSelectionRequest.bind(this), // NEW: Pass the handler
+          onServerUrlChange: this.handleServerUrlChange.bind(this) // NEW: Pass the server URL change handler
         });
 
         this.selectionManager.init(
@@ -1595,6 +1642,12 @@ R .. J : "asdf"
       }
 
       _setupInitialState() {
+        // Load server URL from localStorage or use default
+        const savedUrl = localStorage.getItem('plantumlServerUrl');
+        const initialUrl = savedUrl || DiagramRenderer.currentServerUrl; // Use default if nothing saved
+        this.uiManager.setPlantUmlServerUrl(initialUrl);
+        this.diagramRenderer.setServerUrl(initialUrl);
+
         this.render();
         this.uiManager.resetPropertiesPane(); // Initialize properties pane with "click an element" message
       }
@@ -1660,6 +1713,13 @@ R .. J : "asdf"
           this.currentPreviewTargetId = null;
       }
 
+      // NEW: Handle server URL changes
+      handleServerUrlChange(newUrl) {
+          this.diagramRenderer.setServerUrl(newUrl);
+          localStorage.setItem('plantumlServerUrl', newUrl); // Save to localStorage
+          this.render(); // Re-render the diagram with the new server URL
+      }
+
 
       insertPlantUMLDirective(type) {
         this.handleClearSelectionRequest(); // Clear selection when adding new element
@@ -1689,7 +1749,7 @@ R .. J : "asdf"
             case 'entity':
             case 'collections':
             case 'queue':
-                directive = `${type} "New ${type.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} ${randomName}" as ${randomName}\n`;
+                directive = `${type} "New ${type.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}" as ${randomName}\n`;
                 break;
 
             // State Diagram specific elements
@@ -1739,14 +1799,14 @@ R .. J : "asdf"
             case 'partition_activity':
                 directive = `partition "New Partition ${randomName}" {\n  ' -- Add elements inside --\n}\n`; // Creates a named partition block
                 break;
+            case 'note':
+                directive = `note "New Note ${randomName}" as ${randomName}\n`;
+                break;
             case 'detach_activity':
                 directive = `detach\n`;
                 break;
             case 'kill_activity':
                 directive = `kill\n`;
-                break;
-            case 'note':
-                directive = `note "New Note ${randomName}" as ${randomName}\n`;
                 break;
 
             // C4 Model specific elements (these are macros, so they don't use 'as Alias' directly)
@@ -1897,7 +1957,14 @@ R .. J : "asdf"
       handleRelationshipFormChange() {
           if (this.currentPreviewSourceId && this.currentPreviewTargetId) {
               const { type, label } = this.uiManager.getRelationshipFormValues();
-              this.uiManager.renderRelationshipPreview(this.currentPreviewSourceId, this.currentPreviewTargetId, type, label, this.uiManager.getPlantUmlSource());
+              this.uiManager.renderRelationshipPreview(
+                  this.currentPreviewSourceId,
+                  this.currentPreviewTargetId,
+                  type,
+                  label,
+                  this.uiManager.getPlantUmlSource(),
+                  this.diagramRenderer.currentServerUrl // Pass the current server URL
+              );
           }
       }
     }
