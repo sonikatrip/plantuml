@@ -121,7 +121,7 @@
     button {
       padding: 8px 12px; /* Increased padding */
       border: 1px solid var(--border-color);
-      border-radius: var(--panel-border-radius); /* Consistent border-radius for buttons */
+      border-radius: 6px; /* Consistent border-radius for buttons */
       background-color: var(--button-bg);
       color: var(--text-color);
       cursor: pointer;
@@ -499,8 +499,8 @@
     <div class="sidebar-section">
         <h3>Diagram Type</h3>
         <select id="diagram-type-select">
+            <option value="component-deployment" selected>UML Component & Deployment</option>
             <option value="class-object">UML Class & Object</option>
-            <option value="component-deployment">UML Component & Deployment</option>
             <option value="use-case">UML Use Case</option>
             <option value="state">UML State</option>
             <option value="activity">UML Activity</option>
@@ -521,9 +521,6 @@
             <button id="clear-diagram-btn"><i class="fas fa-trash-alt"></i> Clear</button>
         </div>
         <textarea id="plantuml-source">@startuml
-class "class J" as J
-interface "interface R" as R
-R .. J : "asdf"
 @enduml</textarea>
     </div>
 
@@ -777,7 +774,12 @@ R .. J : "asdf"
 
           for (const line of lines) {
               if (line.match(specificDeclarationRegex)) {
-                  return line.trim();
+                  let declaration = line.trim();
+                  const braceIndex = declaration.indexOf('{');
+                  if (braceIndex > -1) {
+                      declaration = declaration.substring(0, braceIndex).trim();
+                  }
+                  return declaration;
               }
               if (line.match(c4MacroDeclarationRegex)) {
                   return line.trim();
@@ -848,10 +850,19 @@ R .. J : "asdf"
 
                           if (newValue && newValue !== '#ffffff' && newValue !== 'white') { // Only add if not default white
                               const hexValue = newValue.startsWith('#') ? newValue : `#${newValue}`;
+                              const braceIndex = line.indexOf('{');
+
                               if (propertiesBlock.includes('{')) {
+                                  // Handles dedicated properties block e.g., {linecolor:red}
                                   propertiesBlock = propertiesBlock.replace('{', `{bgcolor:${hexValue};`);
+                              } else if (braceIndex > -1) {
+                                  // Handles grouping element with body e.g., node "My Node" {
+                                  const lineStart = line.substring(0, braceIndex).trim();
+                                  const lineEnd = line.substring(braceIndex);
+                                  line = `${lineStart} ${hexValue} ${lineEnd}`;
                               } else {
-                                  line += ` ${hexValue}`; // Append directly if no properties block
+                                  // Handles simple element e.g., class "My Class"
+                                  line += ` ${hexValue}`;
                               }
                           }
                           break;
@@ -881,6 +892,39 @@ R .. J : "asdf"
               updatedSource.push(line);
           }
           return updatedSource.join('\n');
+      },
+
+      /**
+       * Indents a given block of code by adding spaces to the beginning of each line.
+       * Preserves leading/trailing empty lines if they are part of the input.
+       * @param {string} code The PlantUML code string to indent.
+       * @param {number} indentLevel The number of spaces to indent by.
+       * @returns {string} The indented code string.
+       */
+      indentCode: function(code, indentLevel = 2) {
+          const indentStr = ' '.repeat(indentLevel);
+          // Split by lines, but keep track of line endings for later rejoining if necessary
+          // Handle both \n and \r\n
+          const lines = code.split(/\r?\n/);
+          // Indent each line, but only if it's not empty
+          const indentedLines = lines.map(line => line.length > 0 ? indentStr + line : line);
+          return indentedLines.join('\n');
+      },
+
+      /**
+       * Detects the leading indentation of the first non-empty line in a given string.
+       * @param {string} text The string to analyze.
+       * @returns {string} The leading whitespace string (e.g., "  ", "    ", "\t").
+       */
+      getLeadingIndentation: function(text) {
+          const lines = text.split(/\r?\n/);
+          for (const line of lines) {
+              const match = line.match(/^(\s*)/);
+              if (match && match[1]) {
+                  return match[1];
+              }
+          }
+          return ''; // No indentation found or all lines are empty
       }
     };
 
@@ -917,70 +961,73 @@ R .. J : "asdf"
 
       diagramComponentData: {
           'class-object': [
-              { type: 'class', label: 'Class', icon: 'fas fa-cube' },
-              { type: 'interface', label: 'Interface', icon: 'fas fa-handshake' },
-              { type: 'abstract class', label: 'Abstract Class', icon: 'fas fa-cubes' },
-              { type: 'enum', label: 'Enum', icon: 'fas fa-list-ol' },
-              { type: 'annotation', label: 'Annotation', icon: 'fas fa-tag' },
-              { type: 'note', label: 'Note', icon: 'fas fa-note-sticky' }
+              { type: 'class', label: 'Class', icon: 'fas fa-cube', isGrouping: false },
+              { type: 'interface', label: 'Interface', icon: 'fas fa-handshake', isGrouping: false },
+              { type: 'abstract class', label: 'Abstract Class', icon: 'fas fa-cubes', isGrouping: false },
+              { type: 'enum', label: 'Enum', icon: 'fas fa-list-ol', isGrouping: false },
+              { type: 'annotation', label: 'Annotation', icon: 'fas fa-tag', isGrouping: false },
+              { type: 'note', label: 'Note', icon: 'fas fa-note-sticky', isGrouping: false }
           ],
           'component-deployment': [
-              { type: 'component', label: 'Component', icon: 'fas fa-box-archive' },
-              { type: 'interface', label: 'Interface', icon: 'fas fa-link' },
-              { type: 'node', label: 'Node', icon: 'fas fa-server' },
-              { type: 'database', label: 'Database', icon: 'fas fa-database' },
-              { type: 'cloud', label: 'Cloud', icon: 'fas fa-cloud' },
-              { type: 'agent', label: 'Agent', icon: 'fas fa-robot' },
-              { type: 'artifact', label: 'Artifact', icon: 'fas fa-file-code' },
-              { type: 'note', label: 'Note', icon: 'fas fa-note-sticky' }
+              { type: 'component', label: 'Component', icon: 'fas fa-box-archive', isGrouping: true },
+              { type: 'interface', label: 'Interface', icon: 'fas fa-link', isGrouping: false },
+              { type: 'node', label: 'Node', icon: 'fas fa-server', isGrouping: true },
+              { type: 'database', label: 'Database', icon: 'fas fa-database', isGrouping: true },
+              { type: 'cloud', label: 'Cloud', icon: 'fas fa-cloud', isGrouping: true },
+              { type: 'agent', label: 'Agent', icon: 'fas fa-robot', isGrouping: true },
+              { type: 'artifact', label: 'Artifact', icon: 'fas fa-file-code', isGrouping: true },
+              { type: 'package', label: 'Package', icon: 'fas fa-box', isGrouping: true },
+              { type: 'frame', label: 'Frame', icon: 'fas fa-border-all', isGrouping: true },
+              { type: 'rectangle', label: 'Rectangle', icon: 'far fa-square', isGrouping: true },
+              { type: 'note', label: 'Note', icon: 'fas fa-note-sticky', isGrouping: false }
           ],
           'use-case': [
-              { type: 'actor', label: 'Actor', icon: 'fas fa-person' },
-              { type: 'usecase', label: 'Use Case', icon: 'far fa-circle' },
-              { type: 'note', label: 'Note', icon: 'fas fa-note-sticky' }
+              { type: 'actor', label: 'Actor', icon: 'fas fa-person', isGrouping: false },
+              { type: 'usecase', label: 'Use Case', icon: 'far fa-circle', isGrouping: false },
+              { type: 'note', label: 'Note', icon: 'fas fa-note-sticky', isGrouping: false }
           ],
           'state': [
-              { type: 'state', label: 'State', icon: 'fas fa-circle-dot' },
-              { type: 'start_state', label: 'Initial State', icon: 'fas fa-play-circle' },
-              { type: 'final_state', label: 'Final State', icon: 'fas fa-stop-circle' },
-              { type: 'choice_state', label: 'Choice', icon: 'fas fa-diamond' },
-              { type: 'junction_state', label: 'Junction', icon: 'fas fa-circle' },
-              { type: 'terminate_state', label: 'Terminate', icon: 'fas fa-times' },
-              { type: 'history_state', label: 'History', icon: 'fas fa-history' },
-              { type: 'note', label: 'Note', icon: 'fas fa-note-sticky' }
+              { type: 'state', label: 'State', icon: 'fas fa-circle-dot', isGrouping: true }, // State can contain sub-states
+              { type: 'start_state', label: 'Initial State', icon: 'fas fa-play-circle', isGrouping: false },
+              { type: 'final_state', label: 'Final State', icon: 'fas fa-stop-circle', isGrouping: false },
+              { type: 'choice_state', label: 'Choice', icon: 'fas fa-diamond', isGrouping: false },
+              { type: 'junction_state', label: 'Junction', icon: 'fas fa-circle', isGrouping: false },
+              { type: 'terminate_state', label: 'Terminate', icon: 'fas fa-times', isGrouping: false },
+              { type: 'history_state', label: 'History', icon: 'fas fa-history', isGrouping: false },
+              { type: 'note', label: 'Note', icon: 'fas fa-note-sticky', isGrouping: false }
           ],
           'activity': [ // New Activity Diagram
-              { type: 'start_activity', label: 'Start', icon: 'fas fa-play-circle' },
-              { type: 'stop_activity', label: 'End', icon: 'fas fa-stop-circle' },
-              { type: 'activity_action', label: 'Activity/Action', icon: 'fas fa-shoe-prints' },
-              { type: 'decision_activity', label: 'Decision', icon: 'fas fa-question-circle' },
-              { type: 'fork_activity', label: 'Fork', icon: 'fas fa-code-branch' },
-              { type: 'join_activity', label: 'Join', icon: 'fas fa-code-merge' },
-              { type: 'partition_activity', label: 'Partition', icon: 'fas fa-columns' },
-              { type: 'note', label: 'Note', icon: 'fas fa-note-sticky' },
-              { type: 'detach_activity', label: 'Detach', icon: 'fas fa-arrow-right-from-bracket' },
-              { type: 'kill_activity', label: 'Kill', icon: 'fas fa-skull' }
+              { type: 'start_activity', label: 'Start', icon: 'fas fa-play-circle', isGrouping: false },
+              { type: 'stop_activity', label: 'End', icon: 'fas fa-stop-circle', isGrouping: false },
+              { type: 'activity_action', label: 'Activity/Action', icon: 'fas fa-shoe-prints', isGrouping: true }, // Can have actions inside
+              { type: 'decision_activity', label: 'Decision', icon: 'fas fa-question-circle', isGrouping: false },
+              { type: 'fork_activity', label: 'Fork', icon: 'fas fa-code-branch', isGrouping: false },
+              { type: 'join_activity', label: 'Join', icon: 'fas fa-code-merge', isGrouping: false },
+              { type: 'partition_activity', label: 'Partition', icon: 'fas fa-columns', isGrouping: true },
+              { type: 'note', label: 'Note', icon: 'fas fa-note-sticky', isGrouping: false },
+              { type: 'detach_activity', label: 'Detach', icon: 'fas fa-arrow-right-from-bracket', isGrouping: false },
+              { type: 'kill_activity', label: 'Kill', icon: 'fas fa-skull', isGrouping: false }
           ],
           'sequence': [
-              { type: 'participant', label: 'Participant', icon: 'fas fa-user' },
-              { type: 'actor', label: 'Actor', icon: 'fas fa-person' },
-              { type: 'boundary', label: 'Boundary', icon: 'fas fa-box' },
-              { type: 'control', label: 'Control', icon: 'fas fa-gamepad' },
-              { type: 'entity', label: 'Entity', icon: 'fas fa-cube' },
-              { type: 'database', label: 'Database', icon: 'fas fa-database' },
-              { type: 'collections', label: 'Collections', icon: 'fas fa-cubes' },
-              { type: 'queue', label: 'Queue', icon: 'fas fa-stream' },
-              { type: 'note', label: 'Note', icon: 'fas fa-note-sticky' }
+              { type: 'participant', label: 'Participant', icon: 'fas fa-user', isGrouping: false },
+              { type: 'actor', label: 'Actor', icon: 'fas fa-person', isGrouping: false },
+              { type: 'boundary', label: 'Boundary', icon: 'fas fa-box', isGrouping: true }, // Boundary can contain
+              { type: 'control', label: 'Control', icon: 'fas fa-gamepad', isGrouping: false },
+              { type: 'entity', label: 'Entity', icon: 'fas fa-cube', isGrouping: false },
+              { type: 'database', label: 'Database', icon: 'fas fa-database', isGrouping: false },
+              { type: 'collections', label: 'Collections', icon: 'fas fa-cubes', isGrouping: false },
+              { type: 'queue', label: 'Queue', icon: 'fas fa-stream', isGrouping: false },
+              { type: 'note', label: 'Note', icon: 'fas fa-note-sticky', isGrouping: false }
           ],
           'c4-general': [ // C4 model elements (keeping the existing ones)
-              { type: 'Person', label: 'Person', icon: 'fas fa-user-circle' },
-              { type: 'Person_Ext', label: 'External Person', icon: 'fas fa-user-slash' },
-              { type: 'System', label: 'System', icon: 'fas fa-desktop' },
-              { type: 'System_Ext', label: 'External System', icon: 'fas fa-server' },
-              { type: 'Container', label: 'Container', icon: 'fas fa-box' },
-              { type: 'ContainerDb', label: 'Container DB', icon: 'fas fa-database' },
-              { type: 'Component', label: 'Component', icon: 'fas fa-box-archive' },
-              { type: 'note', label: 'Note', icon: 'fas fa-note-sticky' }
+              { type: 'Person', label: 'Person', icon: 'fas fa-user-circle', isGrouping: false },
+              { type: 'Person_Ext', label: 'External Person', icon: 'fas fa-user-slash', isGrouping: false },
+              { type: 'System', label: 'System', icon: 'fas fa-desktop', isGrouping: true }, // Systems can contain containers
+              { type: 'System_Ext', label: 'External System', icon: 'fas fa-server', isGrouping: true },
+              { type: 'Container', label: 'Container', icon: 'fas fa-box', isGrouping: true }, // Containers can contain components
+              { type: 'ContainerDb', label: 'Container DB', icon: 'fas fa-database', isGrouping: true },
+              { type: 'Component', label: 'Component', icon: 'fas fa-box-archive', isGrouping: true }, // Components can contain classes
+              { type: 'note', label: 'Note', icon: 'fas fa-note-sticky', isGrouping: false }
           ]
       },
 
@@ -1034,7 +1081,8 @@ R .. J : "asdf"
             const clickedButton = event.target.closest('button[data-action="insert-directive"]');
             if (clickedButton) {
                 const type = clickedButton.dataset.type;
-                this.callbacks.onInsertDirective && this.callbacks.onInsertDirective(type);
+                const isGrouping = clickedButton.dataset.isGrouping === 'true'; // Get isGrouping property
+                this.callbacks.onInsertDirective && this.callbacks.onInsertDirective(type, isGrouping);
             }
         });
 
@@ -1112,6 +1160,7 @@ R .. J : "asdf"
                   const button = document.createElement('button');
                   button.setAttribute('data-action', 'insert-directive');
                   button.setAttribute('data-type', comp.type);
+                  button.setAttribute('data-is-grouping', comp.isGrouping); // Store isGrouping
                   button.innerHTML = `<i class="${comp.icon}"></i> <span>${comp.label}</span>`;
                   this.elements.diagramComponentButtons.appendChild(button);
               });
@@ -1443,6 +1492,16 @@ R .. J : "asdf"
       setPlantUmlServerUrl: function(url) {
           this.elements.plantUmlServerUrlInput.value = url;
       },
+
+      // Get the current text selection in the PlantUML source textarea
+      getTextSelection: function() {
+          const textarea = this.elements.plantUmlSource;
+          return {
+              start: textarea.selectionStart,
+              end: textarea.selectionEnd,
+              value: textarea.value
+          };
+      },
     };
 
     // --- 3. SELECTION MANAGER MODULE ---
@@ -1721,123 +1780,131 @@ R .. J : "asdf"
       }
 
 
-      insertPlantUMLDirective(type) {
+      insertPlantUMLDirective(type, isGrouping) {
         this.handleClearSelectionRequest(); // Clear selection when adding new element
 
         const currentSource = this.uiManager.getPlantUmlSource();
         const existingNames = this._extractExistingPlantUMLNames(currentSource);
         const randomName = Utils.generateRandomLetter(existingNames);
 
-        let directive;
+        const selection = this.uiManager.getTextSelection();
+        const hasSelection = selection.start !== selection.end;
+        const selectedText = selection.value.substring(selection.start, selection.end);
+
+        let directiveOpening;
+        let directiveClosing = '';
+        let newSource;
+        const indentLevel = 2; // Standard indentation for nested elements
+
+        // Determine the base directive string
         switch (type) {
-            // General Elements
+            // Grouping Elements
+            case 'component':
+            case 'node':
+            case 'cloud':
+            case 'package':
+            case 'frame':
+            case 'rectangle':
+            case 'state':
+            case 'activity_action': // Activities can contain other actions/decisions in curly braces
+            case 'partition_activity':
+            case 'boundary':
+            case 'System':
+            case 'System_Ext':
+            case 'Container':
+            case 'ContainerDb':
+            case 'Component': // C4 Component can contain sub-components/classes
+            case 'database':
+            case 'agent':
+            case 'artifact':
+                directiveOpening = `${type} "New ${type.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}" as ${randomName} {\n`;
+                directiveClosing = `}\n`;
+                break;
+            // Non-grouping Elements
             case 'class':
             case 'interface':
             case 'abstract class':
             case 'enum':
             case 'annotation':
-            case 'component':
-            case 'node':
-            case 'database':
-            case 'cloud':
-            case 'agent':
-            case 'artifact':
             case 'actor':
             case 'usecase':
-            case 'boundary':
             case 'control':
             case 'entity':
             case 'collections':
             case 'queue':
-                directive = `${type} "New ${type.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}" as ${randomName}\n`;
+                directiveOpening = `${type} "New ${type.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}" as ${randomName}\n`;
                 break;
 
-            // State Diagram specific elements
-            case 'state':
-                directive = `state "New State ${randomName}" as ${randomName}\n`;
-                break;
-            case 'start_state':
-                directive = `state "Initial State" as Initial${randomName} <<start>>\n`;
-                break;
-            case 'final_state':
-                directive = `state "Final State" as Final${randomName} <<end>>\n`;
-                break;
-            case 'choice_state':
-                directive = `state "Choice" as Choice${randomName} <<choice>>\n`;
-                break;
-            case 'junction_state':
-                directive = `state "Junction" as Junction${randomName} <<junction>>\n`;
-                break;
-            case 'terminate_state':
-                directive = `state "Terminate" as Terminate${randomName} <<terminate>>\n`;
-                break;
-            case 'history_state':
-                directive = `state "History" as History${randomName} <<history>>\n`;
-                break;
+            // State Diagram specific elements (non-grouping by default, but state can be grouping)
+            case 'start_state': directiveOpening = `start\n`; break;
+            case 'final_state': directiveOpening = `stop\n`; break;
+            case 'choice_state': directiveOpening = `diamond "Choice ${randomName}" as ${randomName}\n`; break;
+            case 'junction_state': directiveOpening = `circle "Junction" as ${randomName}\n`; break;
+            case 'terminate_state': directiveOpening = `kill\n`; break; // 'kill' can be used for terminate
+            case 'history_state': directiveOpening = `state "History" as ${randomName} <<history>>\n`; break;
 
             // Activity Diagram specific elements
-            case 'start_activity':
-                directive = `start\n`;
-                break;
-            case 'stop_activity':
-                directive = `stop\n`;
-                break;
-            case 'activity_action':
-                // Using (Label) as Alias syntax for activities to make them clearly linkable.
-                directive = `(New Activity ${randomName}) as ${randomName}\n`;
-                break;
-            case 'decision_activity':
-                // A standalone diamond for a decision point
-                directive = `diamond "Condition ${randomName}?" as ${randomName}\n`;
-                break;
-            case 'fork_activity':
-                directive = `fork Fork${randomName}\nend fork\n`; // Creates a named fork block
-                break;
-            case 'join_activity':
-                directive = `join Join${randomName}\n`; // Creates a named join
-                break;
-            case 'partition_activity':
-                directive = `partition "New Partition ${randomName}" {\n  ' -- Add elements inside --\n}\n`; // Creates a named partition block
-                break;
-            case 'note':
-                directive = `note "New Note ${randomName}" as ${randomName}\n`;
-                break;
-            case 'detach_activity':
-                directive = `detach\n`;
-                break;
-            case 'kill_activity':
-                directive = `kill\n`;
-                break;
+            case 'start_activity': directiveOpening = `start\n`; break;
+            case 'stop_activity': directiveOpening = `stop\n`; break;
+            case 'decision_activity': directiveOpening = `if (Condition ${randomName}?) then (yes)\n  ' -- action for yes --\nelse (no)\n  ' -- action for no --\nendif\n`; break;
+            case 'fork_activity': directiveOpening = `fork\n  ' -- Path 1 --\nfork again\n  ' -- Path 2 --\nend fork\n`; break;
+            case 'join_activity': directiveOpening = `join\n`; break;
+            case 'note': directiveOpening = `note "New Note ${randomName}" as ${randomName}\n`; break;
+            case 'detach_activity': directiveOpening = `detach\n`; break;
+            case 'kill_activity': directiveOpening = `kill\n`; break;
 
-            // C4 Model specific elements (these are macros, so they don't use 'as Alias' directly)
-            // Assumes !includeurl for C4-PlantUML is present in the source.
+            // C4 Model specific elements that are not grouping
             case 'Person':
             case 'Person_Ext':
-            case 'System':
-            case 'System_Ext':
-            case 'Container':
-            case 'ContainerDb':
-            case 'Component':
-                directive = `${type}(${randomName}, "New ${type} ${randomName}", "Description for ${type}")\n`;
+                directiveOpening = `${type}(${randomName}, "New ${type.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}", "Description for ${type}")\n`;
                 break;
             default:
                 console.warn(`Unhandled type for directive: ${type}. Using generic approach.`);
-                directive = `${type} "New ${type} ${randomName}" as ${randomName}\n`;
+                directiveOpening = `${type} "New ${type} ${randomName}" as ${randomName}\n`;
                 break;
         }
 
-        const endUmlIndex = currentSource.lastIndexOf("@enduml");
-        let newSource;
-        if (endUmlIndex !== -1) {
-          newSource =
-            currentSource.substring(0, endUmlIndex) +
-            directive +
-            currentSource.substring(endUmlIndex);
+        // Apply smart wrapping if a grouping element is clicked and text is selected
+        if (isGrouping && hasSelection) {
+            const indentedSelectedText = Utils.indentCode(selectedText, indentLevel);
+            const originalLeadingIndentation = Utils.getLeadingIndentation(selectedText);
+
+            // Reconstruct the directive opening to include the detected indentation
+            // This ensures the new grouping element aligns with the wrapped content's original indentation level
+            const trimmedDirectiveOpening = directiveOpening.trim();
+            const indentedDirectiveOpening = originalLeadingIndentation + trimmedDirectiveOpening + "\n";
+            const indentedDirectiveClosing = originalLeadingIndentation + directiveClosing.trim() + "\n";
+
+
+            newSource =
+                selection.value.substring(0, selection.start) +
+                indentedDirectiveOpening +
+                indentedSelectedText + "\n" + // Add newline after indented content if not already there
+                indentedDirectiveClosing +
+                selection.value.substring(selection.end);
+
+            // Set the cursor after the inserted block
+            this.uiManager.elements.plantUmlSource.value = newSource;
+            const newCursorPos = selection.start + indentedDirectiveOpening.length + indentedSelectedText.length + indentedDirectiveClosing.length + 1; // +1 for the added newline if any
+            this.uiManager.elements.plantUmlSource.setSelectionRange(newCursorPos, newCursorPos);
+
         } else {
-          newSource = currentSource + `\n${directive}`;
+            // Default behavior: insert before @enduml
+            const endUmlIndex = currentSource.lastIndexOf("@enduml");
+            if (endUmlIndex !== -1) {
+                // Ensure there's a newline before inserting the directive if it's not already on a new line
+                const insertPoint = (currentSource[endUmlIndex - 1] === '\n') ? endUmlIndex : endUmlIndex;
+                newSource =
+                    currentSource.substring(0, insertPoint) +
+                    directiveOpening +
+                    directiveClosing + // Add closing brace if it's a grouping element, even if no selection
+                    currentSource.substring(endUmlIndex);
+            } else {
+                newSource = currentSource + `\n${directiveOpening}${directiveClosing}`; // Fallback if no @enduml
+            }
+            this.uiManager.setPlantUmlSource(newSource);
         }
 
-        this.uiManager.setPlantUmlSource(newSource);
         requestAnimationFrame(() => this.render());
       }
 
