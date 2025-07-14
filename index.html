@@ -65,8 +65,6 @@
       border-bottom: 1px solid var(--border-color);
       font-size: var(--font-size-main-heading);
       font-weight: 600;
-      border-top-left-radius: var(--border-radius);
-      border-top-right-radius: var(--border-radius);
       box-shadow: var(--box-shadow);
       z-index: 10;
       position: sticky;
@@ -496,7 +494,8 @@
     #direction-toolbar .icon-btn {
         padding: 6px 10px;
         min-height: auto;
-        width: auto;
+        width: 32px;
+        height: 32px;
         flex-direction: row;
         gap: 5px;
         font-size: var(--font-size-small);
@@ -624,17 +623,16 @@
   <div id="main-content">
     <div class="editor-panel">
         <div class="panel-header">
-            <h3>PlantUML Source</h3>
-            <div class="controls">
-                <button id="undo-btn" class="icon-btn" title="Undo (Ctrl+Z)"><i class="fas fa-undo"></i></button>
-                <button id="copy-btn" class="icon-btn" title="Copy to Clipboard"><i class="fas fa-clipboard"></i></button>
-                <button id="save-btn" class="icon-btn" title="Save File"><i class="fas fa-save"></i></button>
-                <button id="clear-diagram-btn" title="Clear Diagram"><i class="fas fa-trash-alt"></i></button>
-            </div>
+            <h3>Source</h3>
         </div>
         <div id="direction-toolbar" class="properties-form-bar" style="margin-bottom:0;">
             <button id="insert-ltr-btn" class="icon-btn" title="Left to Right Diagram" type="button"><i class="fas fa-arrow-right"></i></button>
             <button id="insert-ttb-btn" class="icon-btn" title="Top to Bottom Diagram" type="button"><i class="fas fa-arrow-down"></i></button>
+            <div style="flex:1;"></div>
+            <button id="undo-btn" class="icon-btn" title="Undo (Ctrl+Z)"><i class="fas fa-undo"></i></button>
+            <button id="copy-btn" class="icon-btn" title="Copy to Clipboard"><i class="fas fa-clipboard"></i></button>
+            <button id="save-btn" class="icon-btn" title="Save File"><i class="fas fa-save"></i></button>
+            <button id="clear-diagram-btn" class="icon-btn" title="Clear Diagram"><i class="fas fa-trash-alt"></i></button>
         </div>
         <textarea id="plantuml-source">@startuml
 @enduml</textarea>
@@ -642,9 +640,9 @@
 
     <div class="editor-panel preview-panel">
         <div class="panel-header">
-            <h3>Diagram Preview</h3>
+            <h3>Preview</h3>
             <div class="controls">
-                <button id="render-diagram-btn" title="Render Diagram"><i class="fas fa-play"></i></button>
+                <button id="render-diagram-btn" title="Render Diagram"><i class="fas fa-sync-alt"></i></button>
             </div>
         </div>
         <div id="properties-form-bar">
@@ -2289,6 +2287,34 @@
           console.error('[Direction Popup] Popup element not found!');
         }
       }, 100);
+
+      // --- Custom tooltip for direction-toolbar buttons ---
+      const toolbar = document.getElementById('direction-toolbar');
+      const tooltip = document.getElementById('tooltip');
+      if (toolbar && tooltip) {
+        toolbar.addEventListener('mouseover', function(e) {
+          const btn = e.target.closest('button');
+          if (btn && btn.title) {
+            // Remove default browser tooltip
+            btn._oldTitle = btn.title;
+            btn.removeAttribute('title');
+            tooltip.textContent = btn._oldTitle;
+            tooltip.style.opacity = 1;
+            const rect = btn.getBoundingClientRect();
+            tooltip.style.left = (rect.left + rect.width/2 - tooltip.offsetWidth/2) + 'px';
+            tooltip.style.top = (rect.bottom + 8 + window.scrollY) + 'px';
+            tooltip.style.pointerEvents = 'none';
+          }
+        });
+        toolbar.addEventListener('mouseout', function(e) {
+          const btn = e.target.closest('button');
+          if (btn && btn._oldTitle) {
+            btn.setAttribute('title', btn._oldTitle);
+            btn._oldTitle = null;
+            tooltip.style.opacity = 0;
+          }
+        });
+      }
     });
   </script>
 </body>
