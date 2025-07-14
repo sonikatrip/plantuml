@@ -438,25 +438,30 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
 
-    .hover-highlight rect,
-    .hover-highlight path,
-    .hover-highlight polygon,
-    .hover-highlight ellipse {
-      stroke: var(--highlight-stroke-relation) !important;
-      stroke-width: 2 !important;
-    }
-    .hover-highlight text {
-      fill: var(--highlight-stroke-relation) !important;
-    }
-    .selected-element rect,
-    .selected-element path,
-    .selected-element polygon,
-    .selected-element ellipse {
+    /* Unified hover for all elements */
+    g.hover-highlight rect,
+    g.hover-highlight ellipse,
+    g.hover-highlight polygon,
+    g.hover-highlight path,
+    g.hover-highlight line,
+    g.hover-highlight text {
       stroke: var(--highlight-stroke-entity) !important;
-      stroke-width: 3 !important;
+      stroke-width: 1.5 !important;
+      fill: transparent !important;
+      filter: none !important;
     }
-    .selected-element text {
-      fill: var(--highlight-stroke-entity) !important;
+
+    /* Unified selected for all elements */
+    g.selected-element rect,
+    g.selected-element ellipse,
+    g.selected-element polygon,
+    g.selected-element path,
+    g.selected-element line,
+    g.selected-element text {
+      stroke: var(--highlight-stroke-entity) !important;
+      stroke-width: 2px !important;
+      fill: transparent !important;
+      filter: none !important;
     }
 
     #sidebar select, #relationship-form-container select {
@@ -477,6 +482,111 @@
         transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
+    /* Add this to the <style> section to ensure the direction-toolbar buttons match the panel-header controls */
+    #direction-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 18px 10px 18px;
+        margin: 0 -18px;
+        border-bottom: 1px solid var(--border-color);
+        background-color: #f8f9fa;
+        min-height: 32px;
+    }
+    #direction-toolbar .icon-btn {
+        padding: 6px 10px;
+        min-height: auto;
+        width: auto;
+        flex-direction: row;
+        gap: 5px;
+        font-size: var(--font-size-small);
+        box-shadow: none;
+        background-color: #e0e6ed;
+        border-color: transparent;
+        color: #34495e;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s, color 0.2s;
+    }
+    #direction-toolbar .icon-btn:hover {
+        background-color: #bfc8d1;
+        border-color: #bfc8d1;
+    }
+    #direction-toolbar .icon-btn i {
+        color: #667e96;
+        font-size: 1.2em;
+    }
+    #direction-toolbar .icon-btn:hover i {
+        color: var(--primary-color);
+    }
+
+    .hover-highlight path,
+    .hover-highlight line,
+    .hover-highlight polygon {
+      stroke: var(--highlight-stroke-relation) !important;
+      stroke-width: 8 !important;
+      stroke-linecap: round !important;
+      pointer-events: stroke !important;
+    }
+    .selected-element path,
+    .selected-element line,
+    .selected-element polygon {
+      stroke: var(--highlight-stroke-entity) !important;
+      stroke-width: 10 !important;
+      stroke-linecap: round !important;
+      pointer-events: stroke !important;
+    }
+
+    #direction-popup {
+      background: #222;
+      color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      padding: 4px;
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3em;
+      pointer-events: auto;
+      transition: opacity 0.15s;
+      height: 36px;
+      width: 132px;
+      overflow: hidden;
+    }
+    #direction-popup button {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.3em;
+      cursor: pointer;
+      padding: 0;
+      border-radius: 4px;
+      transition: background 0.15s, color 0.15s;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    #direction-popup button:hover {
+      background: #3498db;
+      color: #fff;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      margin: 0;
+      box-sizing: border-box;
+    }
+    /* Prevent text selection and always show pointer cursor in SVG diagram */
+    #svg-container, #svg-container * {
+      user-select: none !important;
+      cursor: pointer !important;
+    }
   </style>
 </head>
 <body>
@@ -521,6 +631,10 @@
                 <button id="save-btn" class="icon-btn" title="Save File"><i class="fas fa-save"></i></button>
                 <button id="clear-diagram-btn" title="Clear Diagram"><i class="fas fa-trash-alt"></i></button>
             </div>
+        </div>
+        <div id="direction-toolbar" class="properties-form-bar" style="margin-bottom:0;">
+            <button id="insert-ltr-btn" class="icon-btn" title="Left to Right Diagram" type="button"><i class="fas fa-arrow-right"></i></button>
+            <button id="insert-ttb-btn" class="icon-btn" title="Top to Bottom Diagram" type="button"><i class="fas fa-arrow-down"></i></button>
         </div>
         <textarea id="plantuml-source">@startuml
 @enduml</textarea>
@@ -581,6 +695,7 @@
   </div>
 
   <div id="tooltip"></div>
+  <div id="direction-popup" style="display:none; position:absolute; z-index:2000;"></div>
 
   <script src="https://unpkg.com/plantuml-encoder/dist/plantuml-encoder.min.js"></script>
   <script>
@@ -981,6 +1096,7 @@
         propName: document.getElementById("prop-name"),
         propBgColor: document.getElementById("prop-bgcolor"),
         propLineColor: document.getElementById("prop-linecolor"),
+        directionPopup: document.getElementById("direction-popup"),
       },
 
       diagramComponentData: {
@@ -998,7 +1114,8 @@
               { type: 'node', label: 'Node', icon: 'fas fa-server', isGrouping: true },
               { type: 'database', label: 'Database', icon: 'fas fa-database', isGrouping: true },
               { type: 'cloud', label: 'Cloud', icon: 'fas fa-cloud', isGrouping: true },
-              { type: 'agent', label: 'Agent', icon: 'fas fa-robot', isGrouping: true },
+              { type: 'actor', label: 'Actor', icon: 'fas fa-person', isGrouping: false },
+              { type: 'agent', label: 'Agent', icon: 'fas fa-robot', isGrouping: false },
               { type: 'artifact', label: 'Artifact', icon: 'fas fa-file-code', isGrouping: true },
               { type: 'package', label: 'Package', icon: 'fas fa-box', isGrouping: true },
               { type: 'frame', label: 'Frame', icon: 'fas fa-border-all', isGrouping: true },
@@ -1082,7 +1199,7 @@
       _setupEventListeners: function() {
         this.elements.plantUmlSource.addEventListener('input', Utils.debounce(() => {
           this.callbacks.onSourceEdit && this.callbacks.onSourceEdit();
-        }, 700));
+        }, 1500));
 
         this.elements.renderButton.addEventListener('click', () => {
           this.callbacks.onRenderRequest && this.callbacks.onRenderRequest();
@@ -1131,7 +1248,7 @@
         });
         this.elements.relationshipLabelInput.addEventListener('input', Utils.debounce(() => {
             this.callbacks.onRelationshipFormChange && this.callbacks.onRelationshipFormChange();
-        }, 300));
+        }, 1500));
 
         this.elements.propName.addEventListener('input', Utils.debounce((e) => {
             if (this.currentSelectedPlantUMLId) {
@@ -1169,6 +1286,49 @@
             if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
                 e.preventDefault();
                 this.callbacks.onUndoRequest && this.callbacks.onUndoRequest();
+            }
+        });
+
+        document.getElementById('insert-ltr-btn').addEventListener('click', function() {
+            const textarea = document.getElementById('plantuml-source');
+            let value = textarea.value;
+            const lines = value.split('\n');
+            const directionDirectives = ['left to right direction', 'top to bottom direction'];
+            let changed = false;
+            if (lines.length > 0 && lines[0].trim() === '@startuml') {
+                // Remove any existing direction directive after @startuml
+                if (lines.length > 1 && directionDirectives.includes(lines[1].trim())) {
+                    lines.splice(1, 1, 'left to right direction');
+                    changed = true;
+                } else {
+                    lines.splice(1, 0, 'left to right direction');
+                    changed = true;
+                }
+            }
+            if (changed) {
+                textarea.value = lines.join('\n');
+                textarea.dispatchEvent(new Event('input'));
+            }
+        });
+        document.getElementById('insert-ttb-btn').addEventListener('click', function() {
+            const textarea = document.getElementById('plantuml-source');
+            let value = textarea.value;
+            const lines = value.split('\n');
+            const directionDirectives = ['left to right direction', 'top to bottom direction'];
+            let changed = false;
+            if (lines.length > 0 && lines[0].trim() === '@startuml') {
+                // Remove any existing direction directive after @startuml
+                if (lines.length > 1 && directionDirectives.includes(lines[1].trim())) {
+                    lines.splice(1, 1, 'top to bottom direction');
+                    changed = true;
+                } else {
+                    lines.splice(1, 0, 'top to bottom direction');
+                    changed = true;
+                }
+            }
+            if (changed) {
+                textarea.value = lines.join('\n');
+                textarea.dispatchEvent(new Event('input'));
             }
         });
       },
@@ -1215,10 +1375,11 @@
 
         // Clear existing highlights from previous renders if any
         svg.querySelectorAll(".hover-highlight").forEach(el => el.classList.remove("hover-highlight"));
+        svg.querySelectorAll(".entity-hover-highlight").forEach(el => el.classList.remove("entity-hover-highlight"));
         svg.querySelectorAll(".selected-element").forEach(el => el.classList.remove("selected-element"));
 
-        const interactiveElements = svg.querySelectorAll("g.entity, g:has(title), g.link"); // Added g.link for relationships
-
+        // Restore selector so all interactive elements get events
+        const interactiveElements = svg.querySelectorAll("g.entity, g:has(title), g.link");
         interactiveElements.forEach(targetGroup => {
           const plantUMLId = Utils.getPlantUMLIdFromSvgElement(targetGroup);
           const gTitleEl = targetGroup.querySelector("title");
@@ -1230,47 +1391,83 @@
               actualTextLabel = Array.from(textElements).map(el => el.textContent.trim()).filter(Boolean).join(' ');
           }
 
-          // Elements selectable for relationships or properties are those with a valid PlantUML ID and not relations
-          const isSelectableForRelationship = (plantUMLId !== null && !targetGroup.classList.contains('link') && !svgTitleFromElement.startsWith('rel-'));
+          // Only relationships (g.link or rel-) get the popup
+          const isRelationship = targetGroup.classList.contains("link") || svgTitleFromElement.startsWith("rel-");
 
-          let tooltipContent;
-          if (targetGroup.classList.contains("link") || svgTitleFromElement.startsWith("rel-")) {
-            // For relationships, try to get info from data attributes or title
-            const sourceEntity = targetGroup.getAttribute("data-entity-1") || "Unknown";
-            const targetEntity = targetGroup.getAttribute("data-entity-2") || "Unknown";
-            const relLabel = actualTextLabel || "";
-
-            if (relLabel) {
-                tooltipContent = `Relationship: ${sourceEntity} -- ${targetEntity} ("${relLabel}")`;
-            } else {
-                tooltipContent = `Relationship: ${sourceEntity} -- ${targetEntity}`;
+          // --- NEW: Set tooltip content for non-relationships ---
+          if (!isRelationship) {
+            if (!targetGroup.hasAttribute("data-tooltip-content")) {
+              let tooltipText = svgTitleFromElement || actualTextLabel || plantUMLId || "";
+              targetGroup.setAttribute("data-tooltip-content", tooltipText);
             }
-          } else if (plantUMLId) {
-            if (actualTextLabel && actualTextLabel !== plantUMLId) {
-              tooltipContent = `${actualTextLabel} (${plantUMLId})`;
-            } else {
-              tooltipContent = plantUMLId;
-            }
-          } else {
-            tooltipContent = actualTextLabel || svgTitleFromElement || "Diagram Element";
           }
-          targetGroup.setAttribute("data-tooltip-content", tooltipContent);
 
-          if (isSelectableForRelationship) {
-            targetGroup.setAttribute("data-plantuml-id", plantUMLId);
-            targetGroup.style.cursor = "pointer";
-            targetGroup.addEventListener("click", (e) => {
-              e.stopPropagation();
-              this.callbacks.onSvgElementClick &&
-                this.callbacks.onSvgElementClick(plantUMLId, targetGroup);
+          // --- NEW: Add click handler for all interactive elements ---
+          targetGroup.addEventListener("click", (e) => {
+            if (typeof app !== "undefined" && app.uiManager.callbacks.onSvgElementClick) {
+              const plantUMLId = Utils.getPlantUMLIdFromSvgElement(targetGroup);
+              if (plantUMLId) {
+                app.uiManager.callbacks.onSvgElementClick(plantUMLId, targetGroup);
+              }
+            }
+            e.stopPropagation();
+          });
+
+          if (isRelationship) {
+            let popupHideTimeout = null;
+            targetGroup.addEventListener("mouseenter", (e) => {
+              // Suppress tooltip for relationships
+              this.hideTooltip();
+              // Show direction popup for relationships
+              const relInfo = {
+                svgElement: targetGroup,
+                source: targetGroup.getAttribute("data-entity-1"),
+                target: targetGroup.getAttribute("data-entity-2"),
+                label: actualTextLabel,
+                type: svgTitleFromElement.match(/([-.]+[<>]*)/) ? svgTitleFromElement.match(/([-.]+[<>]*)/)[1] : null
+              };
+              // Add hover highlight for relationships
+              targetGroup.classList.add("hover-highlight");
+              targetGroup.classList.remove("entity-hover-highlight");
+              this.showDirectionPopup(e.pageX, e.pageY, relInfo);
+              if (popupHideTimeout) clearTimeout(popupHideTimeout);
+            });
+            targetGroup.addEventListener("mousemove", (e) => {
+              // Don't update position on mousemove - popup should stay fixed
+            });
+            targetGroup.addEventListener("mouseleave", (e) => {
+              // Delay hiding to allow mouse to move to popup
+              // Remove hover highlight for relationships
+              targetGroup.classList.remove("hover-highlight");
+              targetGroup.classList.remove("entity-hover-highlight");
+              popupHideTimeout = setTimeout(() => {
+                if (!this.elements.directionPopup.matches(':hover')) {
+                  this.hideDirectionPopup();
+                }
+              }, 600);
+            });
+            // Also handle popup mouse events
+            this.elements.directionPopup.addEventListener('mouseenter', () => {
+              if (popupHideTimeout) clearTimeout(popupHideTimeout);
+            });
+            this.elements.directionPopup.addEventListener('mouseleave', () => {
+              popupHideTimeout = setTimeout(() => {
+                this.hideDirectionPopup();
+              }, 600);
             });
           } else {
-            targetGroup.style.cursor = "default";
+            // For non-relationships, keep previous logic (tooltip, no popup)
+            targetGroup.addEventListener("mouseenter", (e) => {
+              // Add entity hover highlight
+              targetGroup.classList.add("entity-hover-highlight");
+              this._handleMouseEnter(e.currentTarget, e.pageX, e.pageY);
+            });
+            targetGroup.addEventListener("mousemove", (e) => this._handleMouseMove(e.currentTarget, e.pageX, e.pageY));
+            targetGroup.addEventListener("mouseleave", (e) => {
+              targetGroup.classList.remove("entity-hover-highlight");
+              this._handleMouseLeave(e.currentTarget);
+            });
           }
-
-          targetGroup.addEventListener("mouseenter", (e) => this._handleMouseEnter(e.currentTarget, e.pageX, e.pageY));
-          targetGroup.addEventListener("mousemove", (e) => this._handleMouseMove(e.currentTarget, e.pageX, e.pageY));
-          targetGroup.addEventListener("mouseleave", (e) => this._handleMouseLeave(e.currentTarget));
         });
       },
 
@@ -1301,6 +1498,10 @@
       },
 
       showTooltip: function(text, x, y) {
+        if (!text) {
+          this.hideTooltip();
+          return;
+        }
         this.elements.tooltip.style.left = x + 10 + "px";
         this.elements.tooltip.style.top = y + 10 + "px";
         this.elements.tooltip.textContent = text;
@@ -1425,14 +1626,14 @@
 
       applySelectionHighlight: function(element, isSelected) {
         if (isSelected) {
-          element.classList.remove("hover-highlight");
+          element.classList.remove("hover-highlight", "entity-hover-highlight", "entity");
           element.classList.add("selected-element");
         } else {
-          element.classList.remove("selected-element");
+          element.classList.remove("selected-element", "entity");
           if (element.matches(':hover')) {
             element.classList.add("hover-highlight");
           } else {
-            element.classList.remove("hover-highlight");
+            element.classList.remove("hover-highlight", "entity-hover-highlight");
           }
         }
       },
@@ -1483,6 +1684,24 @@
               end: textarea.selectionEnd,
               value: textarea.value
           };
+      },
+
+      showDirectionPopup: function(x, y, relInfo) {
+        const popup = this.elements.directionPopup;
+        popup.innerHTML = `
+          <button data-dir="left" title="Left">⇦</button>
+          <button data-dir="up" title="Up">⇧</button>
+          <button data-dir="down" title="Down">⇩</button>
+          <button data-dir="right" title="Right">⇨</button>
+        `;
+        popup.style.display = 'flex';
+        popup.style.left = (x + 12) + 'px';
+        popup.style.top = (y - 12) + 'px';
+        popup.relInfo = relInfo;
+      },
+      hideDirectionPopup: function() {
+        this.elements.directionPopup.style.display = 'none';
+        this.elements.directionPopup.relInfo = null;
       },
     };
 
@@ -1831,7 +2050,6 @@
             case 'ContainerDb':
             case 'Component':
             case 'database':
-            case 'agent':
             case 'artifact':
                 directiveOpening = `${type} "New ${type.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}" as ${randomName} {\n`;
                 directiveClosing = `}\n`;
@@ -1842,6 +2060,7 @@
             case 'enum':
             case 'annotation':
             case 'actor':
+            case 'agent':
             case 'usecase':
             case 'control':
             case 'entity':
@@ -1996,8 +2215,80 @@
 
     // --- GLOBAL INITIALIZATION ---
     document.addEventListener('DOMContentLoaded', () => {
-      const app = new PlantUMLApp();
+      window.app = new PlantUMLApp();
       console.log("PlantUML Editor initialized.");
+      
+      // Set up direction popup click handler after app is initialized
+      setTimeout(() => {
+        const popup = document.getElementById('direction-popup');
+        if (popup) {
+          popup.addEventListener('click', function(e) {
+            if (e.target.tagName === 'BUTTON') {
+              const dir = e.target.getAttribute('data-dir');
+              const relInfo = popup.relInfo;
+              console.log('[DEBUG] Clicked direction:', dir);
+              console.log('[DEBUG] relInfo:', relInfo);
+              if (!relInfo || !dir) return;
+              // Find and update the relationship directive in the PlantUML source
+              const textarea = document.getElementById('plantuml-source');
+              let lines = textarea.value.split('\n');
+              console.log('[DEBUG] All lines:', lines);
+              // Match all PlantUML relationship types, including arrows, as a single group
+              // Helper to insert direction in the correct place for all PlantUML relationship types
+              function insertDirection(op, dir) {
+                // Remove any existing direction
+                op = op.replace(/([<|o*.-])(?:up|down|left|right)/, '$1');
+                // <|-->, <|--, *-->, *--, o-->, o--, -->, --, ..>, .., etc.
+                if (op.startsWith('<|--')) return `<|-${dir}--${op.endsWith('>') ? '>' : ''}`;
+                if (op.startsWith('*--')) return `*-${dir}--${op.endsWith('>') ? '>' : ''}`;
+                if (op.startsWith('o--')) return `o-${dir}--${op.endsWith('>') ? '>' : ''}`;
+                if (op.startsWith('--')) return `-${dir}->`;
+                if (op.startsWith('..')) return `.${dir}.>${op.endsWith('>') ? '>' : ''}`;
+                if (op.startsWith('-')) return `-${dir}->`;
+                if (op.startsWith('.')) return `.${dir}.>${op.endsWith('>') ? '>' : ''}`;
+                return op; // fallback
+              }
+              const relPatternStr = `^\\s*${relInfo.source}\\s+([<|o*.-]*(?:up|down|left|right)?[<|o*.-]*>?)\\s+${relInfo.target}(\\s*(:.*)?$)`;
+              const relPattern = new RegExp(relPatternStr);
+              console.log('[DEBUG] Using regex:', relPatternStr);
+              let found = false;
+              for (let i = 0; i < lines.length; i++) {
+                let m = lines[i].match(relPattern);
+                if (m) {
+                  let op = m[1];
+                  op = insertDirection(op, dir);
+                  lines[i] = `${relInfo.source} ${op} ${relInfo.target}${m[2] || ''}`;
+                  found = true;
+                  break;
+                }
+                // Try reverse
+                const reverseRelPatternStr = `^\\s*${relInfo.target}\\s+([<|o*.-]*(?:up|down|left|right)?[<|o*.-]*>?)\\s+${relInfo.source}(\\s*(:.*)?$)`;
+                const reverseRelPattern = new RegExp(reverseRelPatternStr);
+                let mRev = lines[i].match(reverseRelPattern);
+                if (mRev) {
+                  let op = mRev[1];
+                  op = insertDirection(op, dir);
+                  lines[i] = `${relInfo.source} ${op} ${relInfo.target}${mRev[2] || ''}`;
+                  found = true;
+                  break;
+                }
+              }
+              if (!found) {
+                console.warn('[DEBUG] No matching relationship line found!');
+              }
+              textarea.value = lines.join('\n');
+              textarea.dispatchEvent(new Event('input'));
+              popup.style.display = 'none';
+              // Trigger the app's source edit handler to update diagram and history
+              if (window.app && window.app.handleSourceEdit) {
+                window.app.handleSourceEdit();
+              }
+            }
+          });
+        } else {
+          console.error('[Direction Popup] Popup element not found!');
+        }
+      }, 100);
     });
   </script>
 </body>
