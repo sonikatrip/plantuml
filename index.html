@@ -1161,11 +1161,13 @@
           'c4-general': [
               { type: 'Person', label: 'Person', icon: 'fas fa-user-circle', isGrouping: false },
               { type: 'Person_Ext', label: 'External Person', icon: 'fas fa-user-slash', isGrouping: false },
-              { type: 'System', label: 'System', icon: 'fas fa-desktop', isGrouping: true },
-              { type: 'System_Ext', label: 'External System', icon: 'fas fa-server', isGrouping: true },
-              { type: 'Container', label: 'Container', icon: 'fas fa-box', isGrouping: true },
-              { type: 'ContainerDb', label: 'Container DB', icon: 'fas fa-database', isGrouping: true },
-              { type: 'Component', label: 'Component', icon: 'fas fa-box-archive', isGrouping: true },
+              { type: 'System', label: 'System', icon: 'fas fa-desktop', isGrouping: false },
+              { type: 'System_Ext', label: 'External System', icon: 'fas fa-server', isGrouping: false },
+              { type: 'Container', label: 'Container', icon: 'fas fa-box', isGrouping: false },
+              { type: 'ContainerDb', label: 'Container DB', icon: 'fas fa-database', isGrouping: false },
+              { type: 'Component', label: 'Component', icon: 'fas fa-box-archive', isGrouping: false },
+              { type: 'System_Boundary', label: 'System Boundary', icon: 'fas fa-border-all', isGrouping: true },
+              { type: 'Container_Boundary', label: 'Container Boundary', icon: 'fas fa-border-style', isGrouping: true },
               { type: 'note', label: 'Note', icon: 'fas fa-note-sticky', isGrouping: false }
           ]
       },
@@ -2031,7 +2033,46 @@
         let newSource;
         const indentLevel = 2;
 
-        switch (type) {
+        // --- C4 Support ---
+        const isC4 = this.uiManager.elements.diagramTypeSelect.value === 'c4-general';
+        const c4Include = '!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml';
+        let lines = currentSource.split('\n');
+        if (isC4) {
+          // Ensure first line is @startuml C4_Elements
+          if (!lines[0].trim().startsWith('@startuml C4_Elements')) {
+            if (lines[0].trim().startsWith('@startuml')) {
+              lines[0] = '@startuml C4_Elements';
+            } else {
+              lines.unshift('@startuml C4_Elements');
+            }
+          }
+          // Ensure C4 include is present as the second line
+          if (!lines[1] || !lines[1].trim().startsWith('!include') || !lines[1].includes('C4_Context.puml')) {
+            lines.splice(1, 0, c4Include);
+          }
+          newSource = lines.join('\n');
+        }
+        if (newSource) {
+          this.uiManager.setPlantUmlSource(newSource);
+        }
+        // --- END C4 Support ---
+
+        // C4 macro insertion
+        if (isC4 && ['Person','Person_Ext','System','System_Ext'].includes(type)) {
+          directiveOpening = `${type}(${randomName}, "New ${type.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}", "Description for ${type}")\n`;
+          directiveClosing = '';
+        } else if (isC4 && ['Container','Component','ContainerDb'].includes(type)) {
+          // Insert with 4 args: alias, label, description, technology
+          let macroName = type === 'ContainerDb' ? 'ContainerDb' : (type === 'Component' ? 'Component' : 'Container');
+          let tech = type === 'ContainerDb' ? 'Database' : (type === 'Component' ? 'Service' : 'App');
+          directiveOpening = `${macroName}(${randomName}, "New ${macroName}", "Description for ${macroName}", "${tech}")\n`;
+          directiveClosing = '';
+        } else if (isC4 && ['System_Boundary','Container_Boundary'].includes(type)) {
+          // Grouping macro: wrap selected text or insert empty
+          directiveOpening = `${type}(${randomName}, "New ${type.replace('_',' ')}") {\n`;
+          directiveClosing = `}\n`;
+        } else {
+          switch (type) {
             case 'component':
             case 'node':
             case 'cloud':
@@ -2088,6 +2129,7 @@
                 console.warn(`Unhandled type for directive: ${type}. Using generic approach.`);
                 directiveOpening = `${type} "New ${type} ${randomName}" as ${randomName}\n`;
                 break;
+          }
         }
 
         if (isGrouping && hasSelection) {
@@ -2106,16 +2148,17 @@
             const newCursorPos = selection.start + indentedDirectiveOpening.length + indentedSelectedText.length + indentedDirectiveClosing.length + 1;
             this.uiManager.elements.plantUmlSource.setSelectionRange(newCursorPos, newCursorPos);
         } else {
-            const endUmlIndex = currentSource.lastIndexOf("@enduml");
+            const src = newSource || currentSource;
+            const endUmlIndex = src.lastIndexOf("@enduml");
             if (endUmlIndex !== -1) {
-                const insertPoint = (currentSource[endUmlIndex - 1] === '\n') ? endUmlIndex : endUmlIndex;
+                const insertPoint = (src[endUmlIndex - 1] === '\n') ? endUmlIndex : endUmlIndex;
                 newSource =
-                    currentSource.substring(0, insertPoint) +
+                    src.substring(0, insertPoint) +
                     directiveOpening +
                     directiveClosing +
-                    currentSource.substring(endUmlIndex);
+                    src.substring(endUmlIndex);
             } else {
-                newSource = currentSource + `\n${directiveOpening}${directiveClosing}`;
+                newSource = src + `\n${directiveOpening}${directiveClosing}`;
             }
             this.uiManager.setPlantUmlSource(newSource);
         }
@@ -2319,3 +2362,4 @@
   </script>
 </body>
 </html>
+
